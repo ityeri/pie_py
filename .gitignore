@@ -1,4 +1,5 @@
 *.pyc
 _token.py
 src/data/*
+!src/data/
 .vscode/
