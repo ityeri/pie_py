@@ -1,6 +1,6 @@
 import nextcord
 from nextcord.ext import commands
-from asyncTasks import AsyncMessageTask
+from commonModule.asyncTasks import AsyncMessageTask
 
 class status:
     WAIT = 0
