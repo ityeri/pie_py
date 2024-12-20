@@ -1,3 +1,4 @@
 *.pyc
 _token.py
 src/data/*
+.vscode/
