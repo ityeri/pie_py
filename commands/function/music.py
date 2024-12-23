@@ -3,7 +3,7 @@ from nextcord import VoiceClient, SlashOption, Embed, VoiceChannel
 from nextcord.ext import commands
 from pytubefix import YouTube, Search
 import time
-from commonModule.embed_message import *
+from commonModule.embed_message import sendErrorEmbed
 import os
 import glob
 import random
@@ -25,7 +25,7 @@ class Playlist:
         self.audioSources: dict[str, nextcord.FFmpegPCMAudio] = dict()
         
         self.songIndex: int = 0
-        self.isPlaying: bool = True # test
+        self.isPlaying: bool = False
         self.playMode: int = PlayMode.ONCE
 
     def start(self):
@@ -36,7 +36,6 @@ class Playlist:
         self.playMode: int = PlayMode.ONCE
         self.songIndex = -1 # play 메서드에서 songIndex 바꾸는 순서 땜에 이렇게 함
         self.play()
-
 
 
 
@@ -81,10 +80,10 @@ class Playlist:
 
 
     async def stop(self):
-        if self.isPlaying == False: return
+        if self.isPlaying == False: raise RuntimeError("정지할수 없음. 플레이 리스트가 재생중이지 않습니다") 
         self.isPlaying = False
         
-        if self.client.is_playing: self.client.stop()
+        if self.client.is_playing(): self.client.stop()
         await self.client.disconnect()
 
         for audioFilePath in self.audioPaths:
@@ -99,6 +98,16 @@ class Playlist:
         
     def setPlayMode(self, playMode: int):
         self.playMode = playMode
+    
+    def skip(self):
+        
+        if self.isPlaying == True:
+            while not self.client.is_playing():
+                self.client.stop()
+        
+        else: raise RuntimeError("스킵할수 없음. 플레이 리스트가 재생중이지 않습니다") 
+
+
 
 
 
@@ -111,32 +120,12 @@ class Music(commands.Cog):
         # musics 폴더에 남은 임시 파일 삭제
         for filePath in glob.glob("musics/*.m4a"):
             os.remove(filePath)
-    
-    # @nextcord.slash_command(name="참가", description="통화방에 들어가 있을경우 해당 통화방에 참가합니다")
-    # async def join(self, interaction: nextcord.Interaction):
-    #     voiceChannel = interaction.user.voice.channel
 
-    #     if not voiceChannel: 
-    #         ...
-    #         return
-
-    #     await voiceChannel.connect()
     
+
     @nextcord.slash_command(name="재생", description="유튜브에서 영상을 찾아 재생합니다")
     async def play(self, interaction: nextcord.Interaction,
                    keyword: str = SlashOption(name="주소or검색어", description="유튜브 영상의 주소 또는 검색어를 입력해 주세요")):
-        
-        '''
-        플랜:
-        play 커맨드의 주 목적은 self.playlists: dict 에 입력받은 검색어에 해당하는 엪앺앰패기 객체를 추가하는거임
-        플레이 리스트에 있는 곡을 하나하나 재생하는 각각의 managePlaylist 메서드가 담당함
-        근데 만약 봇이 해당 음성채널에 접속해 있지 않은, 최초 실행의 경우
-        play 메서드는 플레이 리스트를 생성하고 managePlaylist 를 실행함
-        씨빠ㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏ앆
-        빙신같은 인터프리터에 에이싱코 내가이겼따삥씬아ㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏㅏ앆
-        제군, 이 코드가 제군의 수많은 뇌척수액과 3시간에 달하는 수면 시간의 희생 끝에
-        만들어 졌음을 기억하라
-        '''
         
         try:
             voiceChannel = interaction.user.voice.channel
@@ -144,20 +133,21 @@ class Music(commands.Cog):
             await sendErrorEmbed(interaction, "NotConnectToChannelError!!!", "음성 체널에 접속한 상태로 이 명령어를 사용해 주세요")
             return
         
+        await interaction.response.defer()
 
         # 영상 가져오기
         if 'youtube.com' in keyword:
             url = keyword
             try: yt = YouTube(url)
             except:
-                await sendErrorEmbed(interaction, "BadLinkError!!!", "올바른 URL 이나 검색어를 입력해 주세요")
+                await sendErrorEmbed(interaction, "BadLinkError!!!", "올바른 URL 이나 검색어를 입력해 주세요", followup=True)
                 return
         else:
             try:
                 search = Search(keyword)
                 yt = search.videos[0]
             except:
-                await sendErrorEmbed(interaction, "BadKeywordError!!!", f"검색어 `{keyword}`\n에 대한 검색 결과가 없습니다")
+                await sendErrorEmbed(interaction, "BadKeywordError!!!", f"검색어 `{keyword}`\n에 대한 검색 결과가 없습니다", followup=True)
                 return
         
         audioFileName = f'{time.time()}'.replace('.', '_')
@@ -167,7 +157,7 @@ class Music(commands.Cog):
         embed = Embed(title=f'검색된 영상 \n```{yt.title}``` \n영상을 플레이 리스트에 추가했습니다!', description=f'길이: {yt.length//60}분 {yt.length%60}초')
         embed.set_image(yt.thumbnail_url)
 
-        await interaction.send(embed=embed)
+        await interaction.followup.send(embed=embed)
 
 
 
@@ -189,7 +179,7 @@ class Music(commands.Cog):
 
 
     @nextcord.slash_command(name="재생방식", description="음악을 재생하는 방식을 정합니다")
-    async def playMode(self, interaction: Interaction,
+    async def playMode(self, interaction: nextcord.Interaction,
                        playMode: str = SlashOption(name="재생방식", choices=["무한반복", "한번씩", "무작위"])):
         try:
             voiceChannel = interaction.user.voice.channel
@@ -219,8 +209,13 @@ class Music(commands.Cog):
 
 
 
+    @nextcord.slash_command(name="스킵", description="음악 하나를 스킵합니다")
+    async def skip(self, interaction: nextcord.Interaction):
+
+
+
     @nextcord.slash_command(name="정지", description="음악 재생을 중지하고 음성체널에서 나갑니다")
-    async def stop(self, interaction: Interaction):
+    async def stop(self, interaction: nextcord.Interaction):
         try:
             voiceChannel = interaction.user.voice.channel
         except AttributeError:
@@ -265,6 +260,17 @@ class Music(commands.Cog):
                 return True
             
         return False
+    
+    async def checkConnectedChannel(self, interaction: nextcord.Interaction) -> VoiceChannel | None:
+        try:
+            voiceChannel = interaction.user.voice.channel
+        except AttributeError:
+            await sendErrorEmbed(interaction, "NotConnectToChannelError!!!", "음성 체널에 접속한 상태로 이 명령어를 사용해 주세요")
+            return None
+        
+        return voiceChannel
+    
+    async def checkUsing
 
 
 
