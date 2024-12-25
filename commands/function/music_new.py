@@ -21,11 +21,18 @@ class PlayMode:
 
 class AudioFile:
     def __init__(self, path: str):
-        self.audio: FFmpegPCMAudio = FFmpegPCMAudio(path)
+        self.audio: FFmpegPCMAudio | None = None
         self.path: str = path
+
+    def new(self):
+        self.audio = None
+        self.audio = FFmpegPCMAudio(source=self.path, 
+                                    executable="ffmpeg",
+                                    options="-filter:a 'volume=0.7'")
     
     def delete(self): 
         del self.audio
+        self.audio = None
         os.remove(self.path)
 
 class GuildPlaylistManager:
@@ -50,6 +57,7 @@ class GuildPlaylistManager:
             raise RuntimeError("연결할수 없습니다. 이미 보이스 클라이언트가 접속해 있습니다")
         # elif self.voiceClient != voiceChannel.guild.id:
         #     raise GuildMismatchError("연결할수 없습니다. 보이스 클라이언트가 속한 길드와 연결하고자 하는 길드가 다릅니다")
+
 
 
         await voiceChannel.connect()
@@ -78,15 +86,8 @@ class GuildPlaylistManager:
             # asyncio.run(self.stop())
             # return
 
-        if len(self.voiceChannel.members) == 0:
-            asyncio.run(self.stop())
-            return
 
-        elif self.playMode == PlayMode.ONCE and self.audioIndex == len(self.playlistAudioFiles):
-            asyncio.run(self.stop())
-            return
-        
-
+        # 다음 음악
         if self.isFirstPlay: self.isFirstPlay = False
         else:
             match self.playMode:
@@ -108,19 +109,39 @@ class GuildPlaylistManager:
                 
                 case _: raise ValueError("올바른 재생방식이 아닙니다.")
 
+        if len(self.voiceChannel.members) == 0:
+            asyncio.run(self.stop())
+            return
+
+        elif self.playMode == PlayMode.ONCE and self.audioIndex == len(self.playlistAudioFiles):
+            asyncio.run(self.stop())
+            return
+        
+
+
 
         audioFile: AudioFile = self.playlistAudioFiles[self.audioIndex]
+        audioFile.new()
 
         time.sleep(1)
 
         self.voiceClient.play(audioFile.audio, after=self.loop)
 
+    def skip(self):
+        if not self.isConnected: raise RuntimeError("봇이 연결한 상태에세 스깁해야함")
+        elif not self.isPlaying: raise RuntimeError("재생중인 상태에서 스킵해야함")
+
+        while not self.voiceClient.is_playing(): ...
+        self.voiceClient.stop()
+
     async def stop(self):
         self.isPlaying = False
+        if not self.voiceClient.is_playing(): time.sleep(1)
         self.voiceClient.stop()
 
         # 원래 콜백합수 입력받을라 했는데 안되서 stop 내에 걍 disconnect 내장 할라다가 안되서
         # 걍 연결 끊는 기능을 내장했는데 안되서 걍 암것도 안할거임
+        # 결론: stop 만으론 음성챛방에선 안나감 걍
 
         # if self.stopCallback is not None:
         #     await self.stopCallback(self)
@@ -130,7 +151,6 @@ class GuildPlaylistManager:
         # await self.voiceClient.disconnect()
         # self.voiceClient = None
         # self.voiceChannel = None
-
 
     async def disconnect(self):
         if not self.isConnected:
@@ -178,19 +198,18 @@ class Music(commands.Cog):
         voiceClient = interaction.guild.voice_client
         guild = interaction.guild
 
-        # 연결 안됬을 경우
+        # 봇이 연결 안됬을 경우
         if voiceClient is None:
             playlistManager = self.newPlaylistManager(guild)
             await playlistManager.connect(userVoiceChannel)
         
-        # 연결 되어 있을 경우
+        # 봇이 연결 되어 있을 경우
         else:
             playlistManager = self.getPlaylistManager(guild)
             
             # 사용자와 서로 다른 음성 채널일경우
             if userVoiceChannel.id != playlistManager.voiceChannel.id:
 
-                print(playlistManager.voiceChannel.members)
 
                 # 봇이 접속한 체널에 이미 사람이 있을경우
                 if len(playlistManager.voiceChannel.members) > 1: # 자기 자신도 인원으로 잡힘
@@ -246,7 +265,7 @@ class Music(commands.Cog):
         audioFilePath = f"musics/{audioFileName}.m4a"
         playlistManager.addAudio(AudioFile(audioFilePath))
         playlistManager.playMode = PlayMode.ONCE
-        playlistManager.play()
+        if playlistManager.isPlaying is False: playlistManager.play()
 
 
 
@@ -277,28 +296,72 @@ class Music(commands.Cog):
 
 
 
-    # @nextcord.slash_command(name="스킵", description="음악 하나를 스킵합니다")
-    # async def skip(self, interaction: nextcord.Interaction): ...
+    @nextcord.slash_command(name="스킵", description="음악 하나를 스킵합니다")
+    async def skip(self, interaction: nextcord.Interaction): 
+        # 사용자 연결 여부 체크
+        if (userVoiceChannel := await self.checkConnectedChannel(interaction)) is None: return
 
+        #봇의 연결 여부 체크
+        voiceClient = interaction.guild.voice_client
+        guild = interaction.guild
 
+        # 봇이 연결 안됬을 경우
+        if voiceClient is None:
+            sendErrorEmbed(interaction, "RuntimeError!!!", "재생 기능을 사용중이지 않습니다")
+            return
 
-    # @nextcord.slash_command(name="정지", description="음악 재생을 중지하고 음성체널에서 나갑니다")
-    # async def stop(self, interaction: nextcord.Interaction):
-    #     try:
-    #         voiceChannel = interaction.user.voice.channel
-    #     except AttributeError:
-    #         await sendErrorEmbed(interaction, "NotConnectToChannelError!!!", "음성 체널에 접속한 상태로 이 명령어를 사용해 주세요")
-    #         return
+        # 봇이 연결 되어 있을 경우
+        else:
+            playlistManager = self.getPlaylistManager(guild)
+            
+            # 사용자와 서로 다른 음성 채널일경우
+            if userVoiceChannel.id != playlistManager.voiceChannel.id:
+                await sendErrorEmbed(interaction, "ChannelMismatchError!!!", 
+                    "봇과 동일한 음성 채팅방에 연결한 상태로 이 기능을 사용해 주세요")
+                return
 
-    #     try:
-    #         await self.getPlaylist(voiceChannel.id).stop()
-    #     except KeyError: 
-    #         await interaction.send("음성 채널에서 재생 기능을 사용중이지 않습니다")
-    #         return
+            # 같은 음성채널이면
+            else:
+                playlistManager = self.getPlaylistManager(guild)
         
-    #     self.deletePlaylist(voiceChannel.id)
+        playlistManager.skip()
 
-    #     await interaction.send("재생을 중지 했습니다!")
+        await interaction.send("음악을 스킵했습니다!")
+
+
+
+    @nextcord.slash_command(name="정지", description="음악 재생을 중지합니다")
+    async def stop(self, interaction: nextcord.Interaction):
+        # 사용자 연결 여부 체크
+        if (userVoiceChannel := await self.checkConnectedChannel(interaction)) is None: return
+
+        #봇의 연결 여부 체크
+        voiceClient = interaction.guild.voice_client
+        guild = interaction.guild
+
+        # 봇이 연결 안됬을 경우
+        if voiceClient is None:
+            sendErrorEmbed(interaction, "RuntimeError!!!", "재생 기능을 사용중이지 않습니다")
+            return
+
+        # 봇이 연결 되어 있을 경우
+        else:
+            playlistManager = self.getPlaylistManager(guild)
+            
+            # 사용자와 서로 다른 음성 채널일경우
+            if userVoiceChannel.id != playlistManager.voiceChannel.id:
+                await sendErrorEmbed(interaction, "ChannelMismatchError!!!", 
+                    "봇과 동일한 음성 채팅방에 연결한 상태로 이 기능을 사용해 주세요")
+                return
+
+            # 같은 음성채널이면
+            else:
+                playlistManager = self.getPlaylistManager(guild)
+        
+        await playlistManager.stop()
+        await playlistManager.disconnect()
+
+        await interaction.send("음악 재생을 정지했습니다!")
 
 
 
@@ -319,6 +382,8 @@ class Music(commands.Cog):
         except AttributeError:
             await sendErrorEmbed(interaction, "NotConnectToChannelError!!!", "음성 체널에 접속한 상태로 이 명령어를 사용해 주세요")
             return None
+        
+
         
         return voiceChannel
     
