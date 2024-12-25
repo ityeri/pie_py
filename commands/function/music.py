@@ -342,7 +342,7 @@ class Music(commands.Cog):
 
         # 봇이 연결 안됬을 경우
         if voiceClient is None:
-            sendErrorEmbed(interaction, "RuntimeError!!!", "재생 기능을 사용중이지 않습니다")
+            await sendErrorEmbed(interaction, "RuntimeError!!!", "재생 기능을 사용중이지 않습니다")
             return
 
         # 봇이 연결 되어 있을 경우
