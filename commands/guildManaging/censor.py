@@ -66,7 +66,7 @@ class Censor(commands.Cog):
             data["keywords"] = list(keywords)
             data["whiteList"] = list(whiteList)
 
-            with open(f'{getDataFolder('censorKeywords')}/{guildId}.json', 'w', encoding='utf-8') as f:
+            with open(f'{getDataFolder("censorKeywords")}/{guildId}.json', 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=4)
 
 
