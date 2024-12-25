@@ -252,6 +252,7 @@ class Music(commands.Cog):
         await interaction.response.defer()
         
         audioFileName = f'{time.time()}'.replace('.', '_')
+        audioFileName += ".m4a"
         audioStream = yt.streams.filter(only_audio=True).first()
         audioStream.download(output_path="musics/", filename=audioFileName)
         
@@ -262,7 +263,7 @@ class Music(commands.Cog):
 
 
 
-        audioFilePath = f"musics/{audioFileName}.m4a"
+        audioFilePath = f"musics/{audioFileName}"
         playlistManager.addAudio(AudioFile(audioFilePath))
         playlistManager.playMode = PlayMode.ONCE
         if playlistManager.isPlaying is False: playlistManager.play()
