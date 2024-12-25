@@ -4,72 +4,14 @@ from nextcord.ext import commands
 import os
 from commonModule.embed_message import *
 from commonModule.menu import *
+from commonModule.path_manager import getDataFolder
 import glob
 import json
 from typing import Callable
-import hgtk
+from commonModule import text_tasker
 
 
 
-def replaceJae(text):
-    result = ''
-    for char in text:
-        if hgtk.checker.is_hangul(char):
-            try:
-                chosung, jungsung, jongsung = hgtk.letter.decompose(char)
-
-                # print(f'"{chosung}" "{jungsung}" "{jongsung}"')
-                
-                # 글자가 ㄱ ㅋㅋ ㅇㅇ 과 같이 자음만 있으면
-                if jungsung == '' and jongsung == '':
-                    result += char
-                    continue
-                # 글자가 ㅏ ㅣ ㅙ ㅒ 같이 모음만 있으면
-                elif chosung == '' and jongsung == '':
-                    result += char
-                    continue
-
-                # ㅔ -> ㅐ, ㅖ -> ㅒ
-                if jungsung == 'ㅔ':
-                    jungsung = 'ㅐ'
-                elif jungsung == 'ㅖ':
-                    jungsung = 'ㅐ'
-                elif jungsung == 'ㅒ':
-                    jungsung = 'ㅐ'
-
-                result += hgtk.letter.compose(chosung, jungsung, jongsung)
-            except: result += char
-        else:
-            result += char  # 한글이 아니면 그대로 추가
-    
-    return result
-
-def replaceDoubleJae(text):
-    # 쌍자음을 단자음으로 매핑
-    double_consonants = {
-        'ㄲ': 'ㄱ', 'ㄸ': 'ㄷ', 'ㅃ': 'ㅂ', 'ㅆ': 'ㅅ', 'ㅉ': 'ㅈ'
-    }
-    
-    result = ''
-    for char in text:
-        if hgtk.checker.is_hangul(char):
-            try:
-                chosung, jungsung, jongsung = hgtk.letter.decompose(char)
-
-                if jungsung == '' and jongsung == '':
-                    result += char
-                    continue
-                
-                # 쌍자음인 경우 단자음으로 변경
-                if chosung in double_consonants:
-                    chosung = double_consonants[chosung]
-                
-                result += hgtk.letter.compose(chosung, jungsung, jongsung)
-            except: result += char
-        else:
-            result += char  # 한글이 아니면 그대로 추가
-    
-    return result
 
 # TODO: 먼 훗날에 시간이 된다면 영자판 에서 한자판 변환하는거 구현해
 # def qwertyToHangul(text):
@@ -85,7 +27,9 @@ class Censor(commands.Cog):
         self.censorKeywords: dict[int, set[str]] = dict()
         self.whiteLists: dict[int, set[int]] = dict()
 
-        filePaths = glob.glob("censorKeywords/*.json")
+        filePath = getDataFolder('censorKeywords')
+
+        filePaths = glob.glob(f"{filePath}/*.json")
 
         for filePath in filePaths:
             try: guildId = int(os.path.splitext(os.path.basename(filePath))[0])
@@ -122,7 +66,7 @@ class Censor(commands.Cog):
             data["keywords"] = list(keywords)
             data["whiteList"] = list(whiteList)
 
-            with open(f'censorKeywords/{guildId}.json', 'w', encoding='utf-8') as f:
+            with open(f'{getDataFolder('censorKeywords')}/{guildId}.json', 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=4)
 
 
@@ -189,9 +133,11 @@ class Censor(commands.Cog):
                     # 띄어쓰기 없
                     messageContent.replace(' ', ''),
                     # 아이어ㅣㅇ 구분 없
-                    replaceJae(messageContent),
+                    text_tasker.replaceJae(messageContent),
                     # 쌍자은 구분 없
-                    replaceDoubleJae(messageContent)
+                    text_tasker.replaceDoubleJae(messageContent),
+                    # 숫자 / 특수기호 없
+                    text_tasker.multiReplace(messageContent, '', "1234567890!@#$%^&*()`-=/\,.<>[]{}")
                 ]
 
                 subKeywords: list[str] = [
@@ -201,9 +147,9 @@ class Censor(commands.Cog):
                     # 띄어쓰기 없
                     keyword.replace(' ', ''),
                     # 아이 어이 구분 없
-                    replaceJae(keyword),
+                    text_tasker.replaceJae(keyword),
                     # 쌍자은 구분 없
-                    replaceDoubleJae(keyword)
+                    text_tasker.replaceDoubleJae(keyword)
                 ]
 
                 # 모든 보조 키워드, 메세지를 재귀적으로 확인

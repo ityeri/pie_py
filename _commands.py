@@ -3,8 +3,7 @@ _commands: list[str] = [
     "common.boom",
 
     "function.random",
-    "function.music_new",
-    # "function.music",
+    "function.music",
 
     "guildManaging.censor",
 
