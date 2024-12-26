@@ -6,8 +6,8 @@ import time
 from commonModule.embed_message import sendErrorEmbed
 import os
 import glob
-import random
-import asyncio
+import random  
+import asyncio          
 from typing import Callable, Awaitable
 
 class GuildMismatchError(Exception): pass
@@ -47,7 +47,7 @@ class GuildPlaylistManager:
         self.playMode: int = None
         self.isFirstPlay: bool = False
 
-        # self.stopCallback: Callable[[GuildPlaylistManager], Awaitable[None]] | None = None
+        self.stopCallback: Callable[[GuildPlaylistManager], Awaitable[None]] | None = None
 
     @property
     def isConnected(self) -> bool: return bool(self.voiceClient)
@@ -66,7 +66,7 @@ class GuildPlaylistManager:
         self.voiceChannel = voiceChannel
 
     def play(self, stopCallback: Callable[['GuildPlaylistManager'], Awaitable[None]]=None, startAudioIndex: int=0):
-        # self.stopCallback = stopCallback
+        self.stopCallback = stopCallback
         self.isPlaying = True
         self.isFirstPlay = True
         self.audioIndex = startAudioIndex
@@ -116,14 +116,13 @@ class GuildPlaylistManager:
         elif self.playMode == PlayMode.ONCE and self.audioIndex == len(self.playlistAudioFiles):
             asyncio.run(self.stop())
             return
-        
 
 
 
         audioFile: AudioFile = self.playlistAudioFiles[self.audioIndex]
         audioFile.new()
 
-        time.sleep(1)
+        # time.sleep(1)
 
         self.voiceClient.play(audioFile.audio, after=self.loop)
 
@@ -143,8 +142,8 @@ class GuildPlaylistManager:
         # 걍 연결 끊는 기능을 내장했는데 안되서 걍 암것도 안할거임
         # 결론: stop 만으론 음성챛방에선 안나감 걍
 
-        # if self.stopCallback is not None:
-        #     await self.stopCallback(self)
+        asyncio.create_task(self.stopCallback(self))
+        # asyncio.create_task(self.stopCallback(self))
 
         # await self.disconnect()
 
@@ -173,7 +172,16 @@ class GuildPlaylistManager:
 
 
 
-# async def stopCallback(manager: GuildPlaylistManager): await manager.disconnect()
+async def stopCallback(manager: GuildPlaylistManager): 
+    print("정지 콜백 호츌")
+    # await manager.voiceClient.disconnect()
+    await manager.disconnect()
+    manager.clearPlaylist()
+    print(manager.playlistAudioFiles)
+
+
+
+
 
 class Music(commands.Cog):
     def __init__(self, bot):
@@ -200,7 +208,8 @@ class Music(commands.Cog):
 
         # 봇이 연결 안됬을 경우
         if voiceClient is None:
-            playlistManager = self.newPlaylistManager(guild)
+            try: playlistManager = self.getPlaylistManager(guild)
+            except KeyError: playlistManager = self.newPlaylistManager(guild)
             await playlistManager.connect(userVoiceChannel)
         
         # 봇이 연결 되어 있을 경우
@@ -266,7 +275,7 @@ class Music(commands.Cog):
         audioFilePath = f"musics/{audioFileName}"
         playlistManager.addAudio(AudioFile(audioFilePath))
         playlistManager.playMode = PlayMode.ONCE
-        if playlistManager.isPlaying is False: playlistManager.play()
+        if playlistManager.isPlaying is False: playlistManager.play(stopCallback=stopCallback)
 
 
 
@@ -361,6 +370,7 @@ class Music(commands.Cog):
         
         await playlistManager.stop()
         await playlistManager.disconnect()
+        playlistManager.clearPlaylist()
 
         await interaction.send("음악 재생을 정지했습니다!")
 
