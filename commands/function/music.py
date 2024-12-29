@@ -10,6 +10,14 @@ import random
 import asyncio          
 from typing import Callable, Awaitable
 
+def get_or_create_event_loop():
+    try:
+        return asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        return loop
+
 class GuildMismatchError(Exception): pass
 
 class PlayMode:
@@ -42,6 +50,8 @@ class GuildPlaylistManager:
         self.voiceChannel: nextcord.VoiceChannel | None = None
         self.isPlaying: bool = False
 
+        self.eventLoop: asyncio.AbstractEventLoop = None
+
         self.audioIndex = None
         self.playlistAudioFiles: list[AudioFile] = list()
         self.playMode: int = None
@@ -65,11 +75,12 @@ class GuildPlaylistManager:
         self.voiceClient = voiceChannel.guild.voice_client
         self.voiceChannel = voiceChannel
 
-    def play(self, stopCallback: Callable[['GuildPlaylistManager'], Awaitable[None]]=None, startAudioIndex: int=0):
+    def play(self, eventLoop: asyncio.AbstractEventLoop, stopCallback: Callable[['GuildPlaylistManager'], Awaitable[None]]=None, startAudioIndex: int=0):
         self.stopCallback = stopCallback
         self.isPlaying = True
         self.isFirstPlay = True
         self.audioIndex = startAudioIndex
+        self.eventLoop = eventLoop
         self.loop()
 
     def loop(self, error=None):
@@ -110,11 +121,13 @@ class GuildPlaylistManager:
                 case _: raise ValueError("올바른 재생방식이 아닙니다.")
 
         if len(self.voiceChannel.members) == 0:
-            asyncio.run(self.stop())
+            # asyncio.run(self.stop())
+            self.stop()
             return
 
         elif self.playMode == PlayMode.ONCE and self.audioIndex == len(self.playlistAudioFiles):
-            asyncio.run(self.stop())
+            # asyncio.run(self.stop())
+            self.stop()
             return
 
 
@@ -133,7 +146,7 @@ class GuildPlaylistManager:
         while not self.voiceClient.is_playing(): ...
         self.voiceClient.stop()
 
-    async def stop(self):
+    def stop(self):
         self.isPlaying = False
         if not self.voiceClient.is_playing(): time.sleep(1)
         self.voiceClient.stop()
@@ -141,21 +154,22 @@ class GuildPlaylistManager:
         # 원래 콜백합수 입력받을라 했는데 안되서 stop 내에 걍 disconnect 내장 할라다가 안되서
         # 걍 연결 끊는 기능을 내장했는데 안되서 걍 암것도 안할거임
         # 결론: stop 만으론 음성챛방에선 안나감 걍
-
-        asyncio.create_task(self.stopCallback(self))
+        
+        self.stopCallback(self)
         # asyncio.create_task(self.stopCallback(self))
 
-        # await self.disconnect()
+        # self.disconnect()
 
         # await self.voiceClient.disconnect()
         # self.voiceClient = None
         # self.voiceChannel = None
 
-    async def disconnect(self):
+    def disconnect(self):
         if not self.isConnected:
             raise RuntimeError("연결 해제를 할수 없습니다. 연결되어 있지 않습니다")
         
-        await self.voiceClient.disconnect()
+        self.eventLoop.create_task(self.voiceClient.disconnect())
+        # asyncio.run_coroutine_threadsafe(self.voiceClient.disconnect(), asyncio.get_event_loop())
         self.voiceClient = None
         self.voiceChannel = None
 
@@ -172,12 +186,10 @@ class GuildPlaylistManager:
 
 
 
-async def stopCallback(manager: GuildPlaylistManager): 
+def stopCallback(manager: GuildPlaylistManager): 
     print("정지 콜백 호츌")
-    # await manager.voiceClient.disconnect()
-    await manager.disconnect()
+    manager.disconnect()
     manager.clearPlaylist()
-    print(manager.playlistAudioFiles)
 
 
 
@@ -275,7 +287,7 @@ class Music(commands.Cog):
         audioFilePath = f"musics/{audioFileName}"
         playlistManager.addAudio(AudioFile(audioFilePath))
         playlistManager.playMode = PlayMode.ONCE
-        if playlistManager.isPlaying is False: playlistManager.play(stopCallback=stopCallback)
+        if playlistManager.isPlaying is False: playlistManager.play(eventLoop=asyncio.get_event_loop(), stopCallback=stopCallback)
 
 
 
@@ -369,8 +381,6 @@ class Music(commands.Cog):
                 playlistManager = self.getPlaylistManager(guild)
         
         await playlistManager.stop()
-        await playlistManager.disconnect()
-        playlistManager.clearPlaylist()
 
         await interaction.send("음악 재생을 정지했습니다!")
 
