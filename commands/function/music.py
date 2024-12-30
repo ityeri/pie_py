@@ -1,10 +1,9 @@
 import nextcord
-from nextcord import VoiceClient, SlashOption, Embed, VoiceChannel, FFmpegPCMAudio
+from nextcord import SlashOption, Embed, FFmpegPCMAudio
 from nextcord.ext import commands
 import pytubefix
 from pytubefix import YouTube, Search
 import time
-import signal
 
 import pytubefix.exceptions
 from commonModule.embed_message import sendErrorEmbed
