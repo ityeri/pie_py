@@ -22,7 +22,9 @@ def get_or_create_event_loop():
         asyncio.set_event_loop(loop)
         return loop
 
-class GuildMismatchError(Exception): pass
+class UserNotConnectedError(Exception): pass
+class BotNotConnectedError(Exception): pass
+class ChannelMismatchError(Exception): pass
 
 class PlayMode:
     ONCE = 0
@@ -196,9 +198,58 @@ class PlaylistManager:
     def __init__(self):
         self.guildPlaylistManagers: dict[int, GuildPlaylistManager] = dict()
 
+    def newPlaylistManager(self, guild: nextcord.Guild) -> GuildPlaylistManager:
+        if self.isManagerExist(guild): raise ValueError("매니저를 만들수 없습니다. 해당 매니저가 이미 존해합니다")
+        self.guildPlaylistManagers[guild.id] = GuildPlaylistManager(guild)
+        return self.guildPlaylistManagers[guild.id]
+
+    def getPlaylistManager(self, guild: nextcord.Guild) -> GuildPlaylistManager:
+        if not self.isManagerExist(guild): KeyError("매니저를 가져올수 없습니다. 해당 매니저가 존재하지 않습니다")
+        return self.guildPlaylistManagers[guild.id]
+
+    def isManagerExist(self, guild: nextcord.Guild) -> bool: guild.id in self.guildPlaylistManagers
+
+    def availabilityCheck(self, interaction: nextcord.Interaction):
+        userGuild = interaction.guild
+        userVoiceChannel = interaction.user.voice.channel
 
 
-async def dounloadVideoTimeout(stream: pytubefix.Stream, outputPath, filename):
+        # 사용자 연결 여부 체크
+
+        if userVoiceChannel: # 사용자는 연결 되었을 경우
+
+            # 봇의 연결 여부 (기능 사용 여부) 체크
+
+            # 봇이 연결 되었고 사용 가능 하다면
+            if self.isManagerExist(userGuild) and (manager := self.getPlaylistManager(userGuild)).isPlaying:
+
+                # 음성채널 일치 여부 체크 (+ 길드 일치여부 체크)
+                botVoiceChannel = manager.voiceChannel
+
+                # 봇과 유저의 위치가 일치하다면
+                if botVoiceChannel.id == userVoiceChannel.id: "ㅇㅋㅇㅋ 굳"
+                # 봇과 유저의 위치다 다르다면
+                else: raise ChannelMismatchError
+
+
+            # 봇이 연결되지 않았고 사용 불가능 하다면
+            else: raise BotNotConnectedError
+
+
+        else: # 사용자가 연결하지 않았을경우
+            raise UserNotConnectedError
+
+    # async def checkConnectedChannel(self, interaction: nextcord.Interaction) -> VoiceChannel | None:
+        # try:
+        #     voiceChannel = interaction.user.voice.channel
+        # except AttributeError:
+        #     await sendErrorEmbed(interaction, "NotConnectToChannelError!!!", "음성 체널에 접속한 상태로 이 명령어를 사용해 주세요")
+        #     return None
+        
+        # return voiceChannel
+
+
+async def downloadVideoTimeout(stream: pytubefix.Stream, outputPath, filename):
     def downloadVideo(stream: pytubefix.Stream, outputPath, filename):
         try:
             stream.download(output_path=outputPath, filename=filename)
@@ -305,7 +356,7 @@ class Music(commands.Cog):
         try:
             print("영상 다운 시작")
             await asyncio.wait_for(
-                dounloadVideoTimeout(stream=stream, outputPath="musics/", filename=audioFileName), timeout=3)
+                downloadVideoTimeout(stream=stream, outputPath="musics/", filename=audioFileName), timeout=3)
             print("영상 다운 끝")
         except TimeoutError:
             await sendErrorEmbed(interaction, "VideoSettingsError!!!", """해당 영상이 너무 길거나 다운로드가 너무 오래 걸립니다!""", 
@@ -429,29 +480,6 @@ class Music(commands.Cog):
 
         await interaction.send("음악 재생을 정지했습니다!")
 
-
-
-    def newPlaylistManager(self, guild: nextcord.Guild) -> GuildPlaylistManager:
-        if self.isManagerExist(guild): raise ValueError("매니저를 만들수 없습니다. 해당 매니저가 이미 존해합니다")
-        self.guildPlaylistManagers[guild.id] = GuildPlaylistManager(guild)
-        return self.guildPlaylistManagers[guild.id]
-
-    def getPlaylistManager(self, guild: nextcord.Guild) -> GuildPlaylistManager:
-        if not self.isManagerExist(guild): KeyError("매니저를 가져올수 없습니다. 해당 매니저가 존재하지 않습니다")
-        return self.guildPlaylistManagers[guild.id]
-
-    def isManagerExist(self, guild: nextcord.Guild) -> bool: guild.id in self.guildPlaylistManagers
-
-    async def checkConnectedChannel(self, interaction: nextcord.Interaction) -> VoiceChannel | None:
-        try:
-            voiceChannel = interaction.user.voice.channel
-        except AttributeError:
-            await sendErrorEmbed(interaction, "NotConnectToChannelError!!!", "음성 체널에 접속한 상태로 이 명령어를 사용해 주세요")
-            return None
-        
-
-        
-        return voiceChannel
 
 
 
