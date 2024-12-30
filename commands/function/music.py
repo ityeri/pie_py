@@ -48,6 +48,8 @@ class YoutubeAudioFile(AudioFile):
         super().__init__(path)
         self.yt: YouTube = yt
 
+
+
 class GuildPlaylistManager:
     def __init__(self, guild: nextcord.Guild):
         self.guild: nextcord.Guild = guild
@@ -243,6 +245,7 @@ class PlaylistManager:
         # return voiceChannel
 
 
+
 async def downloadVideoTimeout(stream: pytubefix.Stream, outputPath: str):
     def downloadVideo(stream: pytubefix.Stream, outputPath, filename):
         try:
@@ -314,7 +317,7 @@ class Music(commands.Cog):
 
         try:
             await asyncio.wait_for(
-                downloadVideoTimeout(stream=stream, outputPath=audioFilePath), timeout=3)
+                downloadVideoTimeout(stream=stream, outputPath=audioFilePath), timeout=10)
         
         except TimeoutError: # 다운로드 너무 오래 걸리면 막음
             await sendErrorEmbed(interaction, "VideoSettingsError!!!", """해당 영상이 너무 길거나 다운로드가 너무 오래 걸립니다!""", 
@@ -372,6 +375,7 @@ class Music(commands.Cog):
 
         embed = Embed(title=f'검색된 영상 \n```{yt.title}``` \n영상을 플레이 리스트에 추가했습니다!', description=f'길이: {yt.length//60}분 {yt.length%60}초')
         embed.set_image(yt.thumbnail_url)
+        embed.color = 0x9cdcfe
 
         await interaction.followup.send(embed=embed)
 
@@ -420,6 +424,27 @@ class Music(commands.Cog):
         manager.skip()
 
         await interaction.send("음악을 스킵했습니다!")
+
+
+
+    @nextcord.slash_command(name="재생목록", description="현재 재생중인 재생 목록을 확인합니다")
+    async def playlist(self, interaction: nextcord.Interaction):
+        try: self.playlistManager.availabilityCheck(interaction)
+        except: 
+            sendErrorEmbed(interaction, "RuntimeError!!!", "재생 기능을 사용 중이지 않거나\n 봇과 같은 음성 채팅방에 있지 않습니다")
+
+        manager = self.playlistManager.getPlaylistManager(interaction.guild)
+
+
+        message = '## 현재 플레이 리스트: \n'
+
+        for i, audioFile in enumerate(manager.playlistAudioFiles):
+            message += f'{i+1}. `{audioFile.yt.title}`  |  길이: *{audioFile.yt.length//60}분 {audioFile.yt.length%60}초*'
+            if i == manager.audioIndex: message += "  |  🔊 현재 재생중!"
+
+            message += '\n'
+
+        await interaction.send(message)
 
 
 
