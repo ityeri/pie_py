@@ -14,14 +14,6 @@ import random
 import asyncio          
 from typing import Callable, Awaitable
 
-def get_or_create_event_loop():
-    try:
-        return asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        return loop
-
 class UserNotConnectedError(Exception): pass
 class BotNotConnectedError(Exception): pass
 class ChannelMismatchError(Exception): pass
@@ -87,6 +79,7 @@ class GuildPlaylistManager:
         self.voiceChannel = voiceChannel
 
     def play(self, eventLoop: asyncio.AbstractEventLoop, stopCallback: Callable[['GuildPlaylistManager'], Awaitable[None]]=None, startAudioIndex: int=0):
+        if not self.isConnected: raise RuntimeError("재생할수 없습니다. 음성채널에 연결되어 있지 않습니다")
         self.stopCallback = stopCallback
         self.isPlaying = True
         self.isFirstPlay = True
@@ -131,7 +124,6 @@ class GuildPlaylistManager:
                 case _: raise ValueError("올바른 재생방식이 아닙니다.")
 
     def loop(self, error=None):
-        if not self.isConnected: raise RuntimeError("재생할수 없습니다. 음성채널에 연결되어 있지 않습니다")
         if not self.isPlaying: return # self.voiceClient.stop 에 의해 강제 중지 됬을경우 무한 실행 방지
 
 
@@ -187,8 +179,10 @@ class GuildPlaylistManager:
             raise ValueError("같은 id 의 오디오를 2개 이상 넣을수 없습니다!")
         self.playlistAudioFiles.append(audioFile)
 
+    def setPlayMode(self, mode: int): self.playMode = mode
+
 def stopCallback(manager: GuildPlaylistManager): 
-    print("정지 콜백 호츌")
+    # print("정지 콜백 호츌")
     manager.disconnect()
     manager.clearPlaylist()
 
@@ -207,7 +201,7 @@ class PlaylistManager:
         if not self.isManagerExist(guild): KeyError("매니저를 가져올수 없습니다. 해당 매니저가 존재하지 않습니다")
         return self.guildPlaylistManagers[guild.id]
 
-    def isManagerExist(self, guild: nextcord.Guild) -> bool: guild.id in self.guildPlaylistManagers
+    def isManagerExist(self, guild: nextcord.Guild) -> bool: return guild.id in self.guildPlaylistManagers
 
     def availabilityCheck(self, interaction: nextcord.Interaction):
         userGuild = interaction.guild
@@ -220,7 +214,6 @@ class PlaylistManager:
             userVoiceChannel = userVoice.channel
 
             # 봇의 연결 여부 (기능 사용 여부) 체크 + 길드 일치 여부 체크
-
             # 봇이 연결 되었고 사용 가능 하다면
             if self.isManagerExist(userGuild) and (manager := self.getPlaylistManager(userGuild)).isPlaying:
 
@@ -278,8 +271,6 @@ class Music(commands.Cog):
     @nextcord.slash_command(name="재생", description="유튜브에서 영상을 찾아 재생합니다")
     async def play(self, interaction: nextcord.Interaction,
                    keyword: str = SlashOption(name="주소or검색어", description="유튜브 영상의 주소 또는 검색어를 입력해 주세요")):
-        
-
 
 
         # 주소, 또는 검색어 적합성 체크
@@ -319,7 +310,7 @@ class Music(commands.Cog):
 
         # 시간제한 걸고 영상 다운
         # "musics/시간.소수점시간.m4a" 형식의 경로 생성
-        audioFilePath = f"musics/" + f'{time.time()}'.replace('.', '_')
+        audioFilePath = f'musics/{time.time()}'.replace('.', '_') + '.m4a'
 
         try:
             await asyncio.wait_for(
@@ -346,7 +337,7 @@ class Music(commands.Cog):
             else: manager = self.playlistManager.getPlaylistManager(interaction.guild)
 
             # interaction.user.voice.channel 가 None 이 아님이 윗줄에서 보장됨
-            manager.connect(interaction.user.voice.channel)
+            await manager.connect(interaction.user.voice.channel)
 
         except ChannelMismatchError:
             manager = self.playlistManager.getPlaylistManager(interaction.guild)
@@ -391,101 +382,58 @@ class Music(commands.Cog):
 
 
 
-    # @nextcord.slash_command(name="재생방식", description="음악을 재생하는 방식을 정합니다")
-    # async def playMode(self, interaction: nextcord.Interaction,
-    #                    playMode: str = SlashOption(name="재생방식", choices=["무한반복", "한번씩", "무작위"])):
-    #     if (voiceChannel := await self.checkConnectedChannel(interaction)) == None: return
-
-
-    #     if (playlistManager := self.getPlaylistManager(interaction.guild)).isPlaying is False:
-    #         await interaction.send("음성 채널에서 해당 기능을 사용중이지 않습니다")
-    #         return
-
-
-    #     match(playMode):
-    #         case "한번씩":
-    #             playlistManager.playMode = PlayMode.ONCE
-    #             await interaction.send(f'이제부터 음악을 한번씩 차례로 재생합니다!')
-    #             return
-    #         case "무한반복":
-    #             playlistManager.playMode = PlayMode.LOOP
-    #             await interaction.send(f'이제부터 음악을 차례대로 계속 재생합니다!')
-    #             return
-    #         case "무작위":
-    #             playlistManager.playMode = PlayMode.SHUFFLE
-    #             await interaction.send(f'이제부터 음악을 무작위로 계속 재생합니다!')
-    #             return
-
-
-
-    # @nextcord.slash_command(name="스킵", description="음악 하나를 스킵합니다")
-    # async def skip(self, interaction: nextcord.Interaction): 
-    #     # 사용자 연결 여부 체크
-    #     if (userVoiceChannel := await self.checkConnectedChannel(interaction)) is None: return
-
-    #     #봇의 연결 여부 체크
-    #     voiceClient = interaction.guild.voice_client
-    #     guild = interaction.guild
-
-    #     # 봇이 연결 안됬을 경우
-    #     if voiceClient is None:
-    #         await sendErrorEmbed(interaction, "RuntimeError!!!", "재생 기능을 사용중이지 않습니다")
-    #         return
-
-    #     # 봇이 연결 되어 있을 경우
-    #     else:
-    #         playlistManager = self.getPlaylistManager(guild)
-            
-    #         # 사용자와 서로 다른 음성 채널일경우
-    #         if userVoiceChannel.id != playlistManager.voiceChannel.id:
-    #             await sendErrorEmbed(interaction, "ChannelMismatchError!!!", 
-    #                 "봇과 동일한 음성 채팅방에 연결한 상태로 이 기능을 사용해 주세요")
-    #             return
-
-    #         # 같은 음성채널이면
-    #         else:
-    #             playlistManager = self.getPlaylistManager(guild)
+    @nextcord.slash_command(name="재생방식", description="음악을 재생하는 방식을 정합니다")
+    async def playMode(self, interaction: nextcord.Interaction,
+                       playMode: str = SlashOption(name="재생방식", choices=["무한반복", "한번씩", "무작위"])):
         
-    #     playlistManager.skip()
+        try: self.playlistManager.availabilityCheck(interaction)
+        except: 
+            sendErrorEmbed(interaction, "RuntimeError!!!", "재생 기능을 사용 중이지 않거나\n 봇과 같은 음성 채팅방에 있지 않습니다")
 
-    #     await interaction.send("음악을 스킵했습니다!")
+        manager = self.playlistManager.getPlaylistManager(interaction.guild)
+
+
+        match(playMode):
+            case "한번씩":
+                manager.setPlayMode(PlayMode.ONCE)
+                await interaction.send(f'이제부터 음악을 한번씩 차례로 재생합니다!')
+                return
+            case "무한반복":
+                manager.setPlayMode(PlayMode.LOOP)
+                await interaction.send(f'이제부터 음악을 차례대로 계속 재생합니다!')
+                return
+            case "무작위":
+                manager.setPlayMode(PlayMode.SHUFFLE)
+                await interaction.send(f'이제부터 음악을 무작위로 계속 재생합니다!')
+                return
 
 
 
-    # @nextcord.slash_command(name="정지", description="음악 재생을 중지합니다")
-    # async def stop(self, interaction: nextcord.Interaction):
-    #     # 사용자 연결 여부 체크
-    #     if (userVoiceChannel := await self.checkConnectedChannel(interaction)) is None: return
+    @nextcord.slash_command(name="스킵", description="음악 하나를 스킵합니다")
+    async def skip(self, interaction: nextcord.Interaction): 
+        try: self.playlistManager.availabilityCheck(interaction)
+        except: 
+            sendErrorEmbed(interaction, "RuntimeError!!!", "재생 기능을 사용 중이지 않거나\n 봇과 같은 음성 채팅방에 있지 않습니다")
 
-    #     #봇의 연결 여부 체크
-    #     voiceClient = interaction.guild.voice_client
-    #     guild = interaction.guild
+        manager = self.playlistManager.getPlaylistManager(interaction.guild)
 
-    #     # 봇이 연결 안됬을 경우
-    #     if voiceClient is None:
-    #         await sendErrorEmbed(interaction, "RuntimeError!!!", "재생 기능을 사용중이지 않습니다")
-    #         return
+        manager.skip()
 
-    #     # 봇이 연결 되어 있을 경우
-    #     else:
-    #         playlistManager = self.getPlaylistManager(guild)
-            
-    #         # 사용자와 서로 다른 음성 채널일경우
-    #         if not playlistManager.isPlaying:
-    #             await sendErrorEmbed(interaction, "RuntimeError!!!", "재생 기능을 사용중이지 않습니다")
-    #             return
-    #         elif userVoiceChannel.id != playlistManager.voiceChannel.id:
-    #             await sendErrorEmbed(interaction, "ChannelMismatchError!!!", 
-    #                 "봇과 동일한 음성 채팅방에 연결한 상태로 이 기능을 사용해 주세요")
-    #             return
+        await interaction.send("음악을 스킵했습니다!")
 
-    #         # 같은 음성채널이면
-    #         else:
-    #             playlistManager = self.getPlaylistManager(guild)
+
+
+    @nextcord.slash_command(name="정지", description="음악 재생을 중지합니다")
+    async def stop(self, interaction: nextcord.Interaction):
+        try: self.playlistManager.availabilityCheck(interaction)
+        except: 
+            sendErrorEmbed(interaction, "RuntimeError!!!", "재생 기능을 사용 중이지 않거나\n 봇과 같은 음성 채팅방에 있지 않습니다")
+
+        manager = self.playlistManager.getPlaylistManager(interaction.guild)
         
-    #     await playlistManager.stop()
+        manager.stop()
 
-    #     await interaction.send("음악 재생을 정지했습니다!")
+        await interaction.send("음악 재생을 정지했습니다!")
 
 
 
