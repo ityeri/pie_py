@@ -5,39 +5,24 @@
     116번 줄 voiceClient.play 가 입력받은 오디오 소스 객체를 해제해서
     생기는 문제 해결 (오디오 객체 재생성 해줘야 할듯) 했음
     스킵 기능 했음
-
     콜백함수 잘 호출되고 manager.disconnect 에러 없는데도
-    딱 158 번줄의 VoiceCLient.disconnect() 실행이 걍 씹히는 문제 해결 
-    노래 삭제 하는중
-    플리 열람 기능
-    플리상에서 다음 음악으로 잘 넘어 가는지 테스트
+    딱 158 번줄의 VoiceCLient.disconnect() 실행이 걍 씹히는 문제 해결 했음
+    플리 열람 했음
+    플리상에서 다음 음악으로 잘 넘어 가는지 테스트 했음
+
+
+    봇이 체널 안갈아 타는 문제 해결
+    /home/it/Desktop/pie-py/commands/function/music.py:349: RuntimeWarning: coroutine 'sendErrorEmbed' was never awaited
+    sendErrorEmbed("ChannelMismatchError",
+    RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+    노래 삭제 기능 추가
+
+주식, 빝코
+# 강화/도박봇 분석 + 구현
 
 룰렛:
     gif 를 통해 회전하는 룰렛 이미지를 보여주고,
     항목 입력받을떄는 UI 클래스 활용
 
 
-렌덥:
-    범위중 일부를 음수로 지정했을때 생기는 에러 해결:
-        Ignoring exception in command <nextcord.application_command.SlashApplicationCommand object at 0x000001D6776E6550>:
-        Traceback (most recent call last):
-        File "d:\.%작업폴더\coding_workspace\dico_bot\pie\pie_py\.venv\Lib\site-packages\nextcord\application_command.py", line 918, in invoke_callback_with_hooks
-            await self(interaction, *args, **kwargs)
-        File "D:\.%작업폴더\coding_workspace\dico_bot\pie\pie_py\commands\function\random.py", line 22, in random
-            await interaction.send(randint(1, maxValue))
-                                ^^^^^^^^^^^^^^^^^^^^
-        File "C:\Program Files\Python311\Lib\random.py", line 362, in randint
-            return self.randrange(a, b+1)
-                ^^^^^^^^^^^^^^^^^^^^^^
-        File "C:\Program Files\Python311\Lib\random.py", line 345, in randrange
-            raise ValueError("empty range for randrange() (%d, %d, %d)" % (istart, istop, width))
-        ValueError: empty range for randrange() (1, -9, -10)
-
-        The above exception was the direct cause of the following exception:
-
-        nextcord.errors.ApplicationInvokeError: Command raised an exception: ValueError: empty range for randrange() (1, -9, -10)
-
-주식, 빝코
-강화/도박봇 분석 + 구현
-
-tts (오토?튠)
+tts (오토?튠) 꺼져 안해 오토튠
