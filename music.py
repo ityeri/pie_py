@@ -1,26 +1,14 @@
 import nextcord
 from nextcord import VoiceClient, SlashOption, Embed, VoiceChannel, FFmpegPCMAudio
 from nextcord.ext import commands
-import pytubefix
 from pytubefix import YouTube, Search
 import time
-import signal
-
-import pytubefix.exceptions
 from commonModule.embed_message import sendErrorEmbed
 import os
 import glob
 import random  
 import asyncio          
 from typing import Callable, Awaitable
-
-def get_or_create_event_loop():
-    try:
-        return asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        return loop
 
 class GuildMismatchError(Exception): pass
 
@@ -43,16 +31,9 @@ class AudioFile:
                                     options="-filter:a 'volume=0.7'")
     
     def delete(self): 
-        self.audio.cleanup()
-
         del self.audio
         self.audio = None
         os.remove(self.path)
-
-class YoutubeAudioFile(AudioFile):
-    def __init__(self, path, yt):
-        super().__init__(path)
-        self.yt: YouTube = yt
 
 class GuildPlaylistManager:
     def __init__(self, guild: nextcord.Guild):
@@ -61,10 +42,8 @@ class GuildPlaylistManager:
         self.voiceChannel: nextcord.VoiceChannel | None = None
         self.isPlaying: bool = False
 
-        self.eventLoop: asyncio.AbstractEventLoop = None
-
         self.audioIndex = None
-        self.playlistAudioFiles: list[YoutubeAudioFile] = list()
+        self.playlistAudioFiles: list[AudioFile] = list()
         self.playMode: int = None
         self.isFirstPlay: bool = False
 
@@ -73,48 +52,50 @@ class GuildPlaylistManager:
     @property
     def isConnected(self) -> bool: return bool(self.voiceClient)
 
+
+
     async def connect(self, voiceChannel: nextcord.VoiceChannel):
         if self.voiceClient:
             raise RuntimeError("연결할수 없습니다. 이미 보이스 클라이언트가 접속해 있습니다")
-
-
 
         await voiceChannel.connect()
         self.isPlaying = False
         self.voiceClient = voiceChannel.guild.voice_client
         self.voiceChannel = voiceChannel
 
-    def play(self, eventLoop: asyncio.AbstractEventLoop, stopCallback: Callable[['GuildPlaylistManager'], Awaitable[None]]=None, startAudioIndex: int=0):
+
+
+    def play(self, stopCallback: Callable[['GuildPlaylistManager'], Awaitable[None]]=None, startAudioIndex: int=0):
         self.stopCallback = stopCallback
         self.isPlaying = True
         self.isFirstPlay = True
         self.audioIndex = startAudioIndex
-        self.eventLoop = eventLoop
         self.loop()
-    
-    
-    def next(self) -> bool:
+
+
+
+    def loop(self, error=None):
         '''
-        self.playMode 에 따라 다음 음악을 설정하고, 재생의 중지 여부를 반환함 (True 일 경우 중지)
+        이 코드는 기본적으로 self.playMode 가 ONCE 라 가정하고 실행됨
         '''
-        if self.isFirstPlay: self.isFirstPlay = False 
+        if not self.isConnected: raise RuntimeError("재생할수 없습니다. 음성채널에 연결되어 있지 않습니다")
+        if not self.isPlaying: return # self.voiceClient.stop 에 의해 강제 중지 됬을경우 무한 실행 방지
+
+
+        if error: ...
+
+
+        # 다음으로 재생될 음악 지정
+        if self.isFirstPlay: self.isFirstPlay = False
         else:
             match self.playMode:
                 case PlayMode.ONCE: 
                     self.audioIndex += 1
-
-                    if self.audioIndex == len(self.playlistAudioFiles):
-                        return True
-                    
-                    else: return False
-
                 
                 case PlayMode.LOOP:
                     self.audioIndex += 1
                     if self.audioIndex == len(self.playlistAudioFiles):
                         self.audioIndex = 0
-                    
-                    return False
                 
                 case PlayMode.SHUFFLE:
                     nextSongIndex = self.audioIndex
@@ -123,91 +104,64 @@ class GuildPlaylistManager:
                         nextSongIndex = random.randrange(0, len(self.playlistAudioFiles))
                     
                     self.audioIndex = nextSongIndex
-
-                    return False
                 
                 case _: raise ValueError("올바른 재생방식이 아닙니다.")
 
-    def loop(self, error=None):
-        if not self.isConnected: raise RuntimeError("재생할수 없습니다. 음성채널에 연결되어 있지 않습니다")
-        if not self.isPlaying: return # self.voiceClient.stop 에 의해 강제 중지 됬을경우 무한 실행 방지
-
-
-        if error: 
-            print(f'================\n재생중 에러 발생!\n==================\n{error}')
-
-        # 다음 음악
-        if self.next():
+        if len(self.voiceChannel.members) == 0:
+            # 예전에 stop, disconnect, stopCallback 함수가 async 로 짜여진적이 있었습니다.
+            # 해당 함수를 실행하기 위해 짰었던 코드 입니다
+            # (그때도 비슷한 에러가 발생한걸로 기억합니다)
+            # asyncio.run(self.stop())
             self.stop()
             return
 
-        elif len(self.voiceChannel.members) == 0:
+        # 음악이 끝까지 재생되었는지 확인
+        elif self.playMode == PlayMode.ONCE and self.audioIndex == len(self.playlistAudioFiles):
+            # asyncio.run(self.stop())
             self.stop()
             return
+
 
         audioFile: AudioFile = self.playlistAudioFiles[self.audioIndex]
         audioFile.new()
 
         self.voiceClient.play(audioFile.audio, after=self.loop)
 
-    def skip(self):
-        if not self.isConnected: raise RuntimeError("봇이 연결한 상태에세 스깁해야함")
-        elif not self.isPlaying: raise RuntimeError("재생중인 상태에서 스킵해야함")
 
-        while not self.voiceClient.is_playing(): ...
-        self.voiceClient.stop()
 
     def stop(self):
         self.isPlaying = False
         if not self.voiceClient.is_playing(): time.sleep(1)
+
         self.voiceClient.stop()
+
+        # self.stopCallback 의 지정 여부를 확인하는 코드는 일시적으로 제외시켰습니다.
         self.stopCallback(self)
+
+
 
     def disconnect(self):
         if not self.isConnected:
             raise RuntimeError("연결 해제를 할수 없습니다. 연결되어 있지 않습니다")
         
-        self.eventLoop.create_task(self.voiceClient.disconnect())
+        # 실제로 에러가 발생한 부분 ==================================================
+        asyncio.run(self.voiceClient.disconnect())
+
         self.voiceClient = None
         self.voiceChannel = None
 
-    def clearPlaylist(self):
-        if self.isPlaying: raise RuntimeError("플레이리스트릴 비울수 없습니다. 플레이리스트가 재생중입니다")
-        
-        for audioFile in self.playlistAudioFiles:
-            audioFile.delete()
-            del audioFile
-        
-        self.playlistAudioFiles = list()
 
-    def addAudio(self, audioFile: YoutubeAudioFile): 
-        if audioFile.yt.video_id in [audioFile.yt.video_id for audioFile in self.playlistAudioFiles]:
-            raise ValueError("같은 id 의 오디오를 2개 이상 넣을수 없습니다!")
-        self.playlistAudioFiles.append(audioFile)
+
+    def clearPlaylist(self): ...
+    def skip(self): ...
+
 
 def stopCallback(manager: GuildPlaylistManager): 
     print("정지 콜백 호츌")
     manager.disconnect()
+
+    # 이 함수는 정상 작동 합니다
     manager.clearPlaylist()
-
-
-
-class PlaylistManager:
-    def __init__(self):
-        self.guildPlaylistManagers: dict[int, GuildPlaylistManager] = dict()
-
-
-
-async def dounloadVideoTimeout(stream: pytubefix.Stream, outputPath, filename):
-    def downloadVideo(stream: pytubefix.Stream, outputPath, filename):
-        try:
-            stream.download(output_path=outputPath, filename=filename)
-        except Exception as e:
-            print(f"Error during download: {e}")
-    try:
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, downloadVideo, stream, outputPath, filename)
-    except asyncio.TimeoutError: "ㅣㅣㅣㅣㅣㅣㅖㅖㅖㅖㅖㅖㅖㅖㅖㅖㅖㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔ!!!!!!!!!!!!"
 
 
 
@@ -221,7 +175,7 @@ class Music(commands.Cog):
         for filePath in glob.glob("musics/*.m4a"):
             os.remove(filePath)
 
-
+    
 
     @nextcord.slash_command(name="재생", description="유튜브에서 영상을 찾아 재생합니다")
     async def play(self, interaction: nextcord.Interaction,
@@ -271,7 +225,7 @@ class Music(commands.Cog):
         # 주소, 또는 검색어 적합성 체크
 
         # 입력이 url 이라면
-        if 'youtube.com' in keyword or 'youtu.be' in keyword:
+        if 'youtube.com' in keyword:
             url = keyword
             try: yt = YouTube(url)
             except:
@@ -286,41 +240,13 @@ class Music(commands.Cog):
                 await sendErrorEmbed(interaction, "BadKeywordError!!!", f"검색어 `{keyword}`\n에 대한 검색 결과가 없습니다")
                 return
         
-
-
         await interaction.response.defer()
         
         audioFileName = f'{time.time()}'.replace('.', '_')
         audioFileName += ".m4a"
-
-        try: # TODO gpt 가 알려준 코드로다가 타임아웃 설정 ㄱ
-            stream: pytubefix.Stream = yt.streams.filter(only_audio=True).first()
-        except pytubefix.exceptions.VideoUnavailable:
-            await sendErrorEmbed(interaction, "VideoSettingsError!!!", """해당 영상을 재생할수 없습니다!
-영상이 아동용이거나, 업로더가 외부에서 영상을 다운받는것을 막아두었을수도 있습니다""", followup=True)
-            return
-
-
-
-        try:
-            print("영상 다운 시작")
-            await asyncio.wait_for(
-                dounloadVideoTimeout(stream=stream, outputPath="musics/", filename=audioFileName), timeout=3)
-            print("영상 다운 끝")
-        except TimeoutError:
-            await sendErrorEmbed(interaction, "VideoSettingsError!!!", """해당 영상이 너무 길거나 다운로드가 너무 오래 걸립니다!""", 
-                                 followup=True)
-            return
+        audioStream = yt.streams.filter(only_audio=True).first()
+        audioStream.download(output_path="musics/", filename=audioFileName)
         
-
-        audioFilePath = f"musics/{audioFileName}"
-        try: playlistManager.addAudio(YoutubeAudioFile(audioFilePath, yt=yt))
-        except ValueError:
-            await sendErrorEmbed(interaction, "DuplicationError!!!", """이미 플레이 리스트에 해당 영상이 있습니다!""", 
-                                 followup=True)
-            return
-
-
         embed = Embed(title=f'검색된 영상 \n```{yt.title}``` \n영상을 플레이 리스트에 추가했습니다!', description=f'길이: {yt.length//60}분 {yt.length%60}초')
         embed.set_image(yt.thumbnail_url)
 
@@ -328,8 +254,10 @@ class Music(commands.Cog):
 
 
 
+        audioFilePath = f"musics/{audioFileName}"
+        playlistManager.addAudio(AudioFile(audioFilePath))
         playlistManager.playMode = PlayMode.ONCE
-        if playlistManager.isPlaying is False: playlistManager.play(eventLoop=asyncio.get_event_loop(), stopCallback=stopCallback)
+        if playlistManager.isPlaying is False: playlistManager.play(stopCallback=stopCallback)
 
 
 
@@ -371,7 +299,7 @@ class Music(commands.Cog):
 
         # 봇이 연결 안됬을 경우
         if voiceClient is None:
-            await sendErrorEmbed(interaction, "RuntimeError!!!", "재생 기능을 사용중이지 않습니다")
+            sendErrorEmbed(interaction, "RuntimeError!!!", "재생 기능을 사용중이지 않습니다")
             return
 
         # 봇이 연결 되어 있을 경우
@@ -413,10 +341,7 @@ class Music(commands.Cog):
             playlistManager = self.getPlaylistManager(guild)
             
             # 사용자와 서로 다른 음성 채널일경우
-            if not playlistManager.isPlaying:
-                await sendErrorEmbed(interaction, "RuntimeError!!!", "재생 기능을 사용중이지 않습니다")
-                return
-            elif userVoiceChannel.id != playlistManager.voiceChannel.id:
+            if userVoiceChannel.id != playlistManager.voiceChannel.id:
                 await sendErrorEmbed(interaction, "ChannelMismatchError!!!", 
                     "봇과 동일한 음성 채팅방에 연결한 상태로 이 기능을 사용해 주세요")
                 return
@@ -452,7 +377,8 @@ class Music(commands.Cog):
 
         
         return voiceChannel
-
+    
+    # async def checkUsingPlaylist(self): ...
 
 
 

@@ -13,6 +13,7 @@ import nextcord.ext
 
 
 class PieBot(commands.Bot):
+
     def __init__(self, intents):
         super().__init__(intents=intents)
 
@@ -30,6 +31,7 @@ class PieBot(commands.Bot):
     def loadCommands(self):
         for commandPath in _commands:
             self.load_extension(f"commands.{commandPath}")
+
             print(f"{commandPath} 등록 완료!")
 
 
