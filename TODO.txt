@@ -9,13 +9,11 @@
     딱 158 번줄의 VoiceCLient.disconnect() 실행이 걍 씹히는 문제 해결 했음
     플리 열람 했음
     플리상에서 다음 음악으로 잘 넘어 가는지 테스트 했음
+    봇이 체널 안갈아 타는 문제 해결 했음
+
+    플리 삭제 기능 추가
 
 
-    봇이 체널 안갈아 타는 문제 해결
-    /home/it/Desktop/pie-py/commands/function/music.py:349: RuntimeWarning: coroutine 'sendErrorEmbed' was never awaited
-    sendErrorEmbed("ChannelMismatchError",
-    RuntimeWarning: Enable tracemalloc to get the object allocation traceback
-    노래 삭제 기능 추가
 
 주식, 빝코
 # 강화/도박봇 분석 + 구현
