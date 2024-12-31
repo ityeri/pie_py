@@ -37,6 +37,8 @@ class AudioFile:
     
     def delete(self): 
         self.audio.cleanup()
+        try: self.audio.read()
+        except: ...
 
         del self.audio
         self.audio = None
@@ -66,10 +68,15 @@ class GuildPlaylistManager:
         self.stopCallback: Callable[[GuildPlaylistManager], Awaitable[None]] | None = None
 
     @property
-    def isConnected(self) -> bool: return bool(self.voiceClient)
+    def isConnected(self) -> bool: 
+        if self.voiceClient is not None:
+            # disconnect 메서드와 동기 비동기 뭐시기 하면서 꼬이는거 방지하기 위함
+            return True
+            # return self.voiceClient.is_connected()
+        else: return False
 
     async def connect(self, voiceChannel: nextcord.VoiceChannel):
-        if self.voiceClient:
+        if self.voiceClient and self.voiceClient.is_connected():
             raise RuntimeError("연결할수 없습니다. 이미 보이스 클라이언트가 접속해 있습니다")
 
 
@@ -156,15 +163,18 @@ class GuildPlaylistManager:
         self.isPlaying = False
         if not self.voiceClient.is_playing(): time.sleep(1)
         self.voiceClient.stop()
+
         self.stopCallback(self)
 
     def disconnect(self):
         if not self.isConnected:
             raise RuntimeError("연결 해제를 할수 없습니다. 연결되어 있지 않습니다")
-        
+
+
         self.eventLoop.create_task(self.voiceClient.disconnect())
         self.voiceClient = None
         self.voiceChannel = None
+
 
     def clearPlaylist(self):
         if self.isPlaying: raise RuntimeError("플레이리스트릴 비울수 없습니다. 플레이리스트가 재생중입니다")
@@ -183,7 +193,7 @@ class GuildPlaylistManager:
     def setPlayMode(self, mode: int): self.playMode = mode
 
 def stopCallback(manager: GuildPlaylistManager): 
-    # print("정지 콜백 호츌")
+    print("정지 콜백 호츌")
     manager.disconnect()
     manager.clearPlaylist()
 
@@ -329,9 +339,12 @@ class Music(commands.Cog):
         # 이 부분에선, 사용 가능성만 체크 하며, 사용 가능하게 만들수 있는경우 그렇게 만들고
         # play 는 이 코드 부분에서 처리하지 않음
         try: self.playlistManager.availabilityCheck(interaction)
+
         except UserNotConnectedError:
-            sendErrorEmbed("UserNotConnectedError", "음성 채널에 접속한 상태로 이 명령어를 사용해 주세요")
+            await sendErrorEmbed(interaction, "UserNotConnectedError", "음성 채널에 접속한 상태로 이 명령어를 사용해 주세요")
             return
+
+
 
         except BotNotConnectedError: 
             if not self.playlistManager.isManagerExist(interaction.guild):
@@ -341,12 +354,14 @@ class Music(commands.Cog):
             # interaction.user.voice.channel 가 None 이 아님이 윗줄에서 보장됨
             await manager.connect(interaction.user.voice.channel)
 
+
+
         except ChannelMismatchError:
             manager = self.playlistManager.getPlaylistManager(interaction.guild)
 
             # 봇이 위치한 음성 채팅방이 비었는지, 비지 않았는지 확인
-            if 0 < len([None for memeber in manager.voiceChannel.members if memeber.bot]):
-                sendErrorEmbed("ChannelMismatchError", 
+            if 0 < len([None for memeber in manager.voiceChannel.members if not memeber.bot]):
+                await sendErrorEmbed(interaction, "ChannelMismatchError", 
                                "봇과 일치하는 음성 채널에 접속하거나, 봇이 위치한 음성 체널이 모두 빌때까지 기다려 주세요")
                 return
             
@@ -355,12 +370,15 @@ class Music(commands.Cog):
                 # manager.play 에서 stopCallback 이 입력되었음을 가정함
                 # = manager.stop 을 할때 disconnect 도 같이 호출됨
                 manager.stop()
-                # stopCallback 의 disconnect 가 비동기이기 때문에 연결 끊길때까지 대기 타야함
-                while manager.isConnected: ...
 
+                # disconnect 가 비동기 실행 이기에 때문에 연결 끊길때까지 대기 타야함
+                # while 문으로다가 끊길때까지 기달라 했는데 코드 블로킹 되고 꼬여서 안됨;;
+                await asyncio.sleep(1) # 대충 1초 정도 기다리면 적당함
                 await manager.connect(interaction.user.voice.channel)
-        
-        finally: # 그 어떤 전처리도 필요하지 않다면
+
+
+
+        else: # 그 어떤 전처리도 필요하지 않다면
 
             # 해당 길드에 대한 매니저가 존재하며, 정상적으로 사용중임이 보장됨
             manager = self.playlistManager.getPlaylistManager(interaction.guild)
@@ -370,6 +388,7 @@ class Music(commands.Cog):
             await sendErrorEmbed(interaction, "DuplicationError!!!", """이미 플레이 리스트에 해당 영상이 있습니다!""", 
                                  followup=True)
             return
+
 
 
         embed = Embed(title=f'검색된 영상 \n```{yt.title}``` \n영상을 플레이 리스트에 추가했습니다!', description=f'길이: {yt.length//60}분 {yt.length%60}초')
