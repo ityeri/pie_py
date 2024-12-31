@@ -8,8 +8,6 @@ from _token import TOKEN
 from _commands import _commands
 import nextcord.ext
 
-# from tqdm import tqdm
-
 
 
 class PieBot(commands.Bot):
