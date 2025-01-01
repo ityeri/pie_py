@@ -36,12 +36,14 @@ class AudioFile:
                                     options="-filter:a 'volume=0.7'")
     
     def delete(self): 
-        self.audio.cleanup()
-        try: self.audio.read()
-        except: ...
+        if self.audio is not None:
+            self.audio.cleanup()
+            try: self.audio.read()
+            except: ...
 
-        del self.audio
-        self.audio = None
+            del self.audio
+            self.audio = None
+        
         os.remove(self.path)
 
 class YoutubeAudioFile(AudioFile):
@@ -106,7 +108,7 @@ class GuildPlaylistManager:
                 case PlayMode.ONCE: 
                     self.audioIndex += 1
 
-                    if self.audioIndex == len(self.playlistAudioFiles):
+                    if self.audioIndex >= len(self.playlistAudioFiles):
                         return True
                     
                     else: return False
@@ -181,7 +183,6 @@ class GuildPlaylistManager:
         
         for audioFile in self.playlistAudioFiles:
             audioFile.delete()
-            del audioFile
         
         self.playlistAudioFiles = list()
 
@@ -189,6 +190,12 @@ class GuildPlaylistManager:
         if audioFile.yt.video_id in [audioFile.yt.video_id for audioFile in self.playlistAudioFiles]:
             raise ValueError("같은 id 의 오디오를 2개 이상 넣을수 없습니다!")
         self.playlistAudioFiles.append(audioFile)
+    
+    def rmAudio(self, index: int) -> YoutubeAudioFile:
+        if self.audioIndex == index: raise PermissionError("지우고자 하는 음악이 이미 재생 중입니다")
+        audioFile = self.playlistAudioFiles.pop(index)
+        audioFile.delete()
+        return audioFile
 
     def setPlayMode(self, mode: int): self.playMode = mode
 
@@ -403,6 +410,30 @@ class Music(commands.Cog):
             manager.play(eventLoop=asyncio.get_event_loop(), stopCallback=stopCallback)
 
 
+    @nextcord.slash_command(name="삭제", description="플레이 리스트의 특정 음악을 지웁니다")
+    async def deleteSong(self, interaction: nextcord.Interaction,
+                         index: int = SlashOption(name="번호", 
+                                                  description="음악의 번호를 적어 주세요 음악의 번호는 `/재생목록` 으로 확인 가능합니다")):
+        
+        try: self.playlistManager.availabilityCheck(interaction)
+        except: 
+            await sendErrorEmbed(interaction, "RuntimeError!!!", "재생 기능을 사용 중이지 않거나\n 봇과 같은 음성 채팅방에 있지 않습니다")
+            return
+
+        manager = self.playlistManager.getPlaylistManager(interaction.guild)
+
+        try: audioFile: YoutubeAudioFile = manager.rmAudio(index - 1)
+        except IndexError: 
+            await sendErrorEmbed(interaction, "IndexError!!!", "음악의 번호가 알맞지 않습니다! 음악의 번호는 `/재생목록` 으로 확인 가능합니다")
+            return
+        
+        except PermissionError:
+            await sendErrorEmbed(interaction, "DeleteError!!!", "현재 재생중인 음악을 지울수 없습니다! 음악의 번호는 `/재생목록` 으로 확인 가능합니다")
+            return
+        
+        await interaction.send(f'`{audioFile.yt.title}` 곡을 플레이 리스트에서 제거했습니다')
+
+
 
     @nextcord.slash_command(name="재생방식", description="음악을 재생하는 방식을 정합니다")
     async def playMode(self, interaction: nextcord.Interaction,
@@ -410,7 +441,8 @@ class Music(commands.Cog):
         
         try: self.playlistManager.availabilityCheck(interaction)
         except: 
-            sendErrorEmbed(interaction, "RuntimeError!!!", "재생 기능을 사용 중이지 않거나\n 봇과 같은 음성 채팅방에 있지 않습니다")
+            await sendErrorEmbed(interaction, "RuntimeError!!!", "재생 기능을 사용 중이지 않거나\n 봇과 같은 음성 채팅방에 있지 않습니다")
+            return
 
         manager = self.playlistManager.getPlaylistManager(interaction.guild)
 
@@ -435,7 +467,8 @@ class Music(commands.Cog):
     async def skip(self, interaction: nextcord.Interaction): 
         try: self.playlistManager.availabilityCheck(interaction)
         except: 
-            sendErrorEmbed(interaction, "RuntimeError!!!", "재생 기능을 사용 중이지 않거나\n 봇과 같은 음성 채팅방에 있지 않습니다")
+            await sendErrorEmbed(interaction, "RuntimeError!!!", "재생 기능을 사용 중이지 않거나\n 봇과 같은 음성 채팅방에 있지 않습니다")
+            return
 
         manager = self.playlistManager.getPlaylistManager(interaction.guild)
 
@@ -449,7 +482,8 @@ class Music(commands.Cog):
     async def playlist(self, interaction: nextcord.Interaction):
         try: self.playlistManager.availabilityCheck(interaction)
         except: 
-            sendErrorEmbed(interaction, "RuntimeError!!!", "재생 기능을 사용 중이지 않거나\n 봇과 같은 음성 채팅방에 있지 않습니다")
+            await sendErrorEmbed(interaction, "RuntimeError!!!", "재생 기능을 사용 중이지 않거나\n 봇과 같은 음성 채팅방에 있지 않습니다")
+            return
 
         manager = self.playlistManager.getPlaylistManager(interaction.guild)
 
@@ -470,7 +504,8 @@ class Music(commands.Cog):
     async def stop(self, interaction: nextcord.Interaction):
         try: self.playlistManager.availabilityCheck(interaction)
         except: 
-            sendErrorEmbed(interaction, "RuntimeError!!!", "재생 기능을 사용 중이지 않거나\n 봇과 같은 음성 채팅방에 있지 않습니다")
+            await sendErrorEmbed(interaction, "RuntimeError!!!", "재생 기능을 사용 중이지 않거나\n 봇과 같은 음성 채팅방에 있지 않습니다")
+            return
 
         manager = self.playlistManager.getPlaylistManager(interaction.guild)
         
