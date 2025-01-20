@@ -6,6 +6,7 @@ _commands: list[str] = [
     "function.random",
     "function.music",
 
+    # "guildManaging.common"
     "guildManaging.censor",
 
     "search.imageSearch",

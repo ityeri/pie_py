@@ -9,6 +9,7 @@ import glob
 import json
 from typing import Callable
 from commonModule import text_tasker
+import hgtk
 
 
 
@@ -19,6 +20,138 @@ from commonModule import text_tasker
 #     }
 # TODO: 화이트 리스트 등록 명령어 추가
 # TODO: manage_messages 권한 이슈 해결
+
+
+class TextConvertMethods:
+    def replaceSSangjamo(text: str) -> str: 
+        # 쌍자모를 전부 단자모로 만들고, ㅐㅔㅒㅖ 를 싸그리 ㅐ 로 바꿈
+        text = text_tasker.replaceDoubleJae(text)
+        text = text_tasker.replaceMoe(text, 'ㅐㅔㅒㅖ', 'ㅐ')
+        return text
+
+    def removeSpecialChar(text: str) -> str:
+        # 특수문자, 공백, 줄바꿈 제거
+        text = text_tasker.multiReplace(text, '', "1234567890!@#$%^&*()`-=/\,.<>[]{};:")
+        text = TextConvertMethods.removeSpaceChar(text)
+        return text
+
+
+
+    def fillterChosung(text: str) -> str:
+        # 초성만 남기고 한글이 아니거나, 모음만 있을경우는 무시
+        result = str()
+
+        for char in text:
+            if hgtk.checker.is_hangul(char):
+                chosung, jungsung, jongsung = hgtk.letter.decompose(char)
+
+                # 완전한 한글 (애 아 엥 욍 등등) 일 경우
+                if chosung != '' and jungsung != '': # 종성 여부는 상관 없음
+                    result += chosung
+
+                # 자음만 있을경우 (ㅁ ㄷ ㅃ ㄲ ㅋ)
+                elif chosung != '' and jungsung == '':
+                    result += char
+
+                # 모음만 있을경우 ㅔㅐㅏㅓㅣ
+                elif chosung == '' and jungsung != '':
+                    continue
+                
+                # 종성만 있을경우 (ㄿ 같은 일부 문자는 종성에만 들어갈수 있음)
+                elif chosung == '' and jungsung == '' and jongsung != '':
+                    result += char
+        
+        return result
+
+    def fillterHangul(text: str) -> str:
+        # 한글 제외 다 제거 (불완전 한글 포함 ㅇ ㄷ ㅔ 등등)
+        result = str()
+        for char in text:
+            if hgtk.checker.is_hangul(char):
+                result += char
+        
+        return result
+
+    def fillterCompleteHangul(text: str) -> str:
+        # 한글 완전체 제외, 다 제거
+        result = str()
+        for char in text:
+            if hgtk.checker.is_hangul(char) and text_tasker.isCompleteHangul(char):
+                result += char
+        
+        return result
+
+
+
+    def fillterAlphabet(text: str) -> str:
+        # 영문 빼고 전부 제거
+        result = str()
+        for char in text:
+            if text.lower() in 'abcdefghijklmnopqrstuvwxyz':
+                result += char
+        
+        return result
+
+    def lowerCase(text: str) -> str:
+        return text.lower()
+
+
+
+    def removeSpaceChar(text: str) -> str:
+        # 이상한 공백 문자, 줄바꿈 제거
+        text = text_tasker.multiReplace(text, '', 
+                                        ' ', '\n', '	',
+                                        '\u0020\u00a0'
+                                        #  u+2000 ~ u+200f
+                                        '\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007'
+                                        '\u2008\u2009\u200a\u200b\u200c\u200d\u200e\u200f'
+                                        # non space 문자
+                                        '\u180e\u2800\u3164'
+                                        # 기타
+                                        '\u202f\u205f\u3000\u2060\ufeff')
+        
+        return text
+
+
+class GuildCensorKeywordManager:
+    def __init__(self, guild: nextcord.Guild, 
+                 keywordConversions: set[Callable[[str], str]] = set(),
+                 messageConversions: set[Callable[[str], str]] = set(), 
+                 keywordConversionLayers: int = 2,
+                 messageConversionLayers: int = 2):
+        
+        self.guild: nextcord.Guild = guild
+        self.censorKeywords: set[str] = set()
+
+        self.keywordConversionLayers: int = keywordConversionLayers
+        self.keywordConversions: set[Callable[[str], str]] = keywordConversions
+
+        self.messageConversionLayers: int = messageConversionLayers
+        self.messageConversions: set[Callable[[str], str]] = messageConversions
+
+    
+    @commands.Cog.listener()
+    async def on_message(self, message: nextcord.Message):
+        if message.guild.id != self.guild.id: return
+
+        for keyword in self.censorKeywords:
+
+            # 키워드 먼저 작업
+            subKeywords = []
+            for curruntTaskingLayer in self.keywordConversionLayers:
+                for layer in curruntTaskingLayer:
+                    ...
+    
+    def conversion(self):
+        ...
+
+
+
+
+class CensorKeywordManager:
+    def __init__(self):
+        # self.
+        ...
 
 
 class Censor(commands.Cog):
@@ -111,9 +244,9 @@ class Censor(commands.Cog):
         if keywords == None or len(keywords) == 0: return
         
         # 메세지 관리 권한이 있을경우
-        if message.author.guild_permissions.manage_messages: return
+        # if message.author.guild_permissions.manage_messages: return
         # 해당 유저가 화이트 리스트에 있을경우
-        if message.author.id in self.getGuildWhiteList(message.guild.id): return
+        # if message.author.id in self.getGuildWhiteList(message.guild.id): return
 
 
 
@@ -132,24 +265,26 @@ class Censor(commands.Cog):
                     messageContent,
                     # 띄어쓰기 없
                     messageContent.replace(' ', ''),
-                    # 아이어ㅣㅇ 구분 없
-                    text_tasker.replaceJae(messageContent),
+                    # ㅔㅐ 구분 없
+                    text_tasker.replaceMoe(messageContent),
                     # 쌍자은 구분 없
                     text_tasker.replaceDoubleJae(messageContent),
                     # 숫자 / 특수기호 없
-                    text_tasker.multiReplace(messageContent, '', "1234567890!@#$%^&*()`-=/\,.<>[]{}")
+                    text_tasker.multiReplace(messageContent, '', "1234567890!@#$%^&*()`-=/\,.<>[]{};:\u200F"),
+                    # 대소문자 구분 없
+                    text_tasker.repl
                 ]
 
                 subKeywords: list[str] = [
                     keyword,
-                    # # 초성 (아하 -> ㅇㅎ)
-                    # ''.join([hgtk.letter.decompose(char)[0] for char in keyword]),
                     # 띄어쓰기 없
                     keyword.replace(' ', ''),
                     # 아이 어이 구분 없
-                    text_tasker.replaceJae(keyword),
+                    text_tasker.replaceMoe(keyword),
                     # 쌍자은 구분 없
-                    text_tasker.replaceDoubleJae(keyword)
+                    text_tasker.replaceDoubleJae(keyword),
+                    # # 초성 (아하 -> ㅇㅎ)
+                    ''.join([text_tasker.hgtk.letter.decompose(char)[0] for char in keyword])
                 ]
 
                 # 모든 보조 키워드, 메세지를 재귀적으로 확인
@@ -215,7 +350,6 @@ class Censor(commands.Cog):
         
         await interaction.send(f'''이 서버에서 사용하면 교수척장분지형당하는 단어들:
 {''.join([f'```{keyword}```' for keyword in keywords])}''', ephemeral=True)
-
 
 
 def setup(bot: commands.Bot):
