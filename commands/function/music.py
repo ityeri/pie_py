@@ -7,15 +7,16 @@ import time
 
 import pytubefix.exceptions
 from commonModule.embed_message import sendErrorEmbed
+from commonModule.exceptions import *
 import os
 import glob
 import random  
 import asyncio          
 from typing import Callable, Awaitable
 
-class UserNotConnectedError(Exception): pass
+
 class BotNotConnectedError(Exception): pass
-class ChannelMismatchError(Exception): pass
+class UserNotConnectedError(Exception): pass
 
 class PlayMode:
     ONCE = 0
