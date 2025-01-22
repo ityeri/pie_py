@@ -6,8 +6,8 @@ from pytubefix import YouTube, Search
 import time
 
 import pytubefix.exceptions
-from commonModule.embed_message import sendErrorEmbed
-from commonModule.exceptions import *
+from common_module.embed_message import sendErrorEmbed
+from common_module.exceptions import *
 import os
 import glob
 import random  

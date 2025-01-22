@@ -2,13 +2,13 @@ import nextcord
 from nextcord import SlashOption
 from nextcord.ext import commands
 import os
-from commonModule.embed_message import *
-from commonModule.menu import *
-from commonModule.path_manager import getDataFolder
+from common_module.embed_message import *
+from common_module.menu import *
+from common_module.path_manager import getDataFolder
 import glob
 import json
 from typing import Callable
-from commonModule import text_tasker
+from common_module import text_tasker
 import hgtk
 
 

@@ -4,7 +4,7 @@ import nextcord.ext
 
 from _commands import _commands
 from _token import TOKEN
-from commonModule.admin_manager import *
+from common_module.admin_manager import *
 
 
 class PieBot(commands.Bot):

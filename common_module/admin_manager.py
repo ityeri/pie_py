@@ -4,8 +4,8 @@ import json
 from nextcord import Guild, Role, Member
 from nextcord.ext import commands
 
-from commonModule.exceptions import GuildMismatchError
-from commonModule.path_manager import getDataFolder
+from common_module.exceptions import GuildMismatchError
+from common_module.path_manager import getDataFolder
 
 
 class GuildAdminManager:
