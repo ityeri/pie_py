@@ -3,7 +3,6 @@ from nextcord import SlashOption, Embed, String
 from nextcord.ext import commands
 from textwrap import dedent
 
-# TODOTODOTOD 역할 제거 완성해라
 from commonModule.embed_message import sendErrorEmbed, Color, sendCompleteEmbed, sendWarnEmbed
 from commonModule.exceptions import GuildMismatchError
 from main import PieBot
