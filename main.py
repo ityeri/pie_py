@@ -1,19 +1,17 @@
-import nextcord
-import nextcord.context_managers
-from nextcord.ext import commands
 import os
-import threading
 
-from _token import TOKEN
-from _commands import _commands
 import nextcord.ext
 
+from _commands import _commands
+from _token import TOKEN
+from commonModule.admin_manager import *
 
 
 class PieBot(commands.Bot):
 
     def __init__(self, intents):
         super().__init__(intents=intents)
+        self.adminManager: AdminManager = AdminManager()
 
 
     def initFolder(self):
@@ -28,6 +26,8 @@ class PieBot(commands.Bot):
 
     def loadCommands(self):
         for commandPath in _commands:
+
+            # 혹시 익스텐션 로드 하는데 에러났니? _command.py 파일에 콤마 잘 넣었는지 봐봐
             self.load_extension(f"commands.{commandPath}")
 
             print(f"{commandPath} 등록 완료!")
@@ -42,17 +42,19 @@ class PieBot(commands.Bot):
         await self.sync_application_commands()
         print("명령어 동기화 완료!\n")
 
+        self.adminManager.load(self)
+
         print('\nTimings Reset\n')
 
 
+if __name__ == "__main__":
+    intents = nextcord.Intents.all()
+    intents.message_content = True
 
-intents = nextcord.Intents.all()
-intents.message_content = True
-
-bot: PieBot = PieBot(intents)
-bot.initFolder()
-bot.loadCommands()
+    bot: PieBot = PieBot(intents)
+    bot.initFolder()
+    bot.loadCommands()
 
 
-print("\n봇을 키는중...")
-bot.run(TOKEN)
+    print("\n봇을 키는중...")
+    bot.run(TOKEN)
