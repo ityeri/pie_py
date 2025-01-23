@@ -6,6 +6,7 @@ from nextcord.ext import commands
 
 from common_module.exceptions import GuildMismatchError
 from common_module.path_manager import getDataFolder
+from pie_bot import PieBot
 
 
 class GuildAdminManager:
@@ -80,8 +81,8 @@ class GuildAdminManager:
         }
 
     @classmethod
-    def fromData(cls, bot: commands.Bot, data: dict[str, list[int] | int]) -> "GuildAdminManager":
-        guildAdminManager = cls(bot.get_guild(data["guildId"]))
+    def fromData(cls, data: dict[str, list[int] | int]) -> "GuildAdminManager":
+        guildAdminManager = cls(PieBot().get_guild(data["guildId"]))
 
         for userId in data["admins"]:
             guildAdminManager.addAdmin(guildAdminManager.guild.get_member(userId))
@@ -90,6 +91,7 @@ class GuildAdminManager:
             guildAdminManager.addRole(guildAdminManager.guild.get_role(roleId))
 
         return guildAdminManager
+
 
 
 class AdminManager:
@@ -126,7 +128,7 @@ class AdminManager:
             with open(f"{savePath}/{guildId}.json", mode='w') as f:
                 json.dump(guildAdminManager.toData(), f, indent=4)
 
-    def load(self, bot: commands.Bot):
+    def load(self):
         loadPath = getDataFolder("admins")
 
         files = glob.glob(loadPath + '/*.json')
@@ -135,6 +137,6 @@ class AdminManager:
             with open(file, 'r') as f:
                 data = json.load(f)
 
-            guildAdminManager = GuildAdminManager.fromData(bot, data)
+            guildAdminManager = GuildAdminManager.fromData(data)
 
             self.guildAdminManagers[guildAdminManager.guild.id] = guildAdminManager
