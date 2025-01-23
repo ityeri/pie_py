@@ -49,9 +49,11 @@ class Censor(commands.Cog):
         self.eventLoop = asyncio.get_event_loop()
 
 
-    
+
     @commands.Cog.listener()
     async def on_ready(self):
+        self.censorManager.load(self.bot)
+
         self.pastMessageCensor.start()
 
 
@@ -121,6 +123,8 @@ class Censor(commands.Cog):
                                 description=f'검열 단어 `{keyword}` 가 정상적으로 등록 되었습니다!', ephemeral=True
                                 )
 
+        self.censorManager.save()
+
 
 
     @nextcord.slash_command(name="검열삭제", description="특정 단어를 검열 리스트에서 제거합니다")
@@ -143,6 +147,8 @@ class Censor(commands.Cog):
         await sendCompleteEmbed(interaction,
                                 description="단어 `{keyword}` 를 검열 리스트에서 제거했습니다", ephemeral=True)
 
+        self.censorManager.save()
+
 
 
     @nextcord.slash_command(name="검열단어", description="이 서버에서 검열되는 단어들을 확인합니다")
@@ -158,6 +164,7 @@ class Censor(commands.Cog):
                                 title=f'이 서버에서 사용할시 삭제되는 단어들: \n**주의: 매우 민감한 단어가 포함되어 있을수 있습니다**',
                                 description=f"||{''.join([f'`{keyword}`' for keyword in keywords])}||", ephemeral=True)
 
+        self.censorManager.save()
 
 
 def setup(bot: commands.Bot):
