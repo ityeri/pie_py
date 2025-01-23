@@ -9,5 +9,5 @@ _commands: list[str] = [
     "guild_managing.common",
     "guild_managing.censor",
 
-    "search.imageSearch",
+    "search.image_search",
 ]
