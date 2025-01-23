@@ -13,34 +13,32 @@ class Color:
     RED = nextcord.Color.from_rgb(255, 110, 100)
 
 async def sendErrorEmbed(interaction: Interaction, errorTitle: str, description: str=None,
-                         ephemeral: bool=False, followup: bool=False):
-    if not followup:
-        await interaction.send(
-            embed=Embed(title=errorTitle, description=description, color=Color.RED), ephemeral=ephemeral
-        )
-    else:
-        await interaction.followup.send(
-            embed=Embed(title=errorTitle, description=description, color=Color.RED), ephemeral=ephemeral
-        )
+                         ephemeral: bool=False, followup: bool=False, footer: str=None):
+    embed = Embed(title=errorTitle,
+                  description=description,
+                  color=Color.RED,
+    )
+    if footer: embed.set_footer(text=footer)
+
+    if not followup: await interaction.send(embed=embed, ephemeral=ephemeral)
+    else: await interaction.followup.send(embed=embed, ephemeral=ephemeral)
 
 async def sendWarnEmbed(interaction: Interaction, warnTitle: str, description: str=None,
-                        ephemeral: bool=False, followup: bool=False):
-    if not followup:
-        await interaction.send(
-            embed=Embed(title=warnTitle, description=description, color=Color.YELLOW), ephemeral=ephemeral
-        )
-    else:
-        await interaction.followup.send(
-            embed=Embed(title=warnTitle, description=description, color=Color.YELLOW), ephemeral=ephemeral
-        )
+                        ephemeral: bool=False, followup: bool=False, footer: str=None):
+    embed = Embed(title=warnTitle,
+                  description=description,
+                  color=Color.YELLOW,
+                  )
+    if footer: embed.set_footer(text=footer)
 
-async def sendCompleteEmbed(interaction: Interaction, description: str=None,
+    if not followup: await interaction.send(embed=embed, ephemeral=ephemeral)
+    else: await interaction.followup.send(embed=embed, ephemeral=ephemeral)
+
+async def sendCompleteEmbed(interaction: Interaction, title: str=None, description: str=None,
                         ephemeral: bool=False, followup: bool=False):
-    if not followup:
-        await interaction.send(
-            embed=Embed(description=description, color=Color.SKY), ephemeral=ephemeral
-        )
-    else:
-        await interaction.followup.send(
-            embed=Embed(description=description, color=Color.SKY), ephemeral=ephemeral
-        )
+    embed = Embed(title=title, description=description,
+                  color=Color.SKY,
+                  )
+
+    if not followup: await interaction.send(embed=embed, ephemeral=ephemeral)
+    else: await interaction.followup.send(embed=embed, ephemeral=ephemeral)
