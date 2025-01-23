@@ -131,7 +131,7 @@ class CommonGuildManaging(commands.Cog):
         self.bot.adminManager.getGuildAdminManager(interaction.guild).addAdmin(member)
 
         await sendCompleteEmbed(interaction,
-                                f"맴버 `{memberName}`을/를 해당 서버의 관리자로 임명했습니다")
+                                description=f"맴버 `{memberName}`을/를 해당 서버의 관리자로 임명했습니다")
 
         self.bot.adminManager.save()
 
@@ -151,7 +151,7 @@ class CommonGuildManaging(commands.Cog):
                 return
 
             guildAdminManager.addRole(role)
-            await sendCompleteEmbed(interaction, f"`{role.name}`를 관리자 역할로 지정합니다")
+            await sendCompleteEmbed(interaction, description=f"`{role.name}`를 관리자 역할로 지정합니다")
 
         except GuildMismatchError:
             await sendErrorEmbed(interaction, "GuildMismatchError!!!",
@@ -203,7 +203,7 @@ class CommonGuildManaging(commands.Cog):
 
             return
 
-        await sendCompleteEmbed(interaction, f"맴버 `{memberName}`을/를 탄핵했습니다")
+        await sendCompleteEmbed(interaction, description=f"맴버 `{memberName}`을/를 탄핵했습니다")
 
     @nextcord.slash_command(name='관리자역할제거', description=dedent('''
     파이봇의 서버 관리 기능을 사용할수 있는 역할을 지정합니다. 기본적으로 서버장이 이 명령어를 사용할수 있습니다'''))
@@ -221,7 +221,7 @@ class CommonGuildManaging(commands.Cog):
                 return
 
             guildAdminManager.rmRole(role)
-            await sendCompleteEmbed(interaction, f"`{role.name}`를 관리자 역할에서 제거했습니다")
+            await sendCompleteEmbed(interaction, description=f"`{role.name}`를 관리자 역할에서 제거했습니다")
 
         except GuildMismatchError:
             await sendErrorEmbed(interaction, "GuildMismatchError!!!",
