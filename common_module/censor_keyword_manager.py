@@ -1,7 +1,15 @@
+import glob
+import json
+import typing
 from typing import Callable
+
+from nextcord.ext import commands
+
+from common_module.path_manager import getDataFolder
 from common_module.text_tasker import removeSpaceChar
 
 from common_module.embed_message import *
+from pie_bot import PieBot
 
 
 class GuildCensorManager:
@@ -27,42 +35,44 @@ class GuildCensorManager:
         self.messageConversions: set[Callable[[str], str]] = messageConversions
 
 
+    def cachingSubKeywords(self):
+        self.cachedSubKeywords = set()
+
+        for keyword in self.censorKeywords:
+
+            self.cachedSubKeywords.add(keyword)
+            currentKeywords = {keyword}
+
+            # 재귀 루프
+            for curruntTaskingLayer in range(self.keywordConversionLayers):
+
+                nextKeywords = set()
+
+                # currentKeywords 에 들은거 하나하나 반복
+                for currentKeyword in currentKeywords:
+
+                    # currentKeywords 를 여러개의 self.keywordConversions 를 활용하여
+                    # 여러개로 만들고 만들어진걸 nextKeywords 에 추가함
+                    for conversion in self.keywordConversions:
+                        convertedStr = conversion(currentKeyword)
+                        nextKeywords.add(convertedStr)
+                        self.cachedSubKeywords.add(convertedStr)
+
+                currentKeywords = nextKeywords.copy()
+
+        filteredSubMessages = set()
+
+        # 공백만 있거나 빈 문자열 걸러냄
+        for subKeyword in self.cachedSubKeywords:
+            if len(removeSpaceChar(subKeyword)) != 0: filteredSubMessages.add(subKeyword)
+
+        self.cachedSubKeywords = filteredSubMessages
+
     @property
     def subKeywords(self) -> set[str]:
         if self.isKeywordChanged:
             self.isKeywordChanged = False
-
-            self.cachedSubKeywords = set()
-
-            for keyword in self.censorKeywords:
-
-                self.cachedSubKeywords.add(keyword)
-                currentKeywords = {keyword}
-
-                # 재귀 루프
-                for curruntTaskingLayer in range(self.keywordConversionLayers):
-
-                    nextKeywords = set()
-
-                    # currentKeywords 에 들은거 하나하나 반복
-                    for currentKeyword in currentKeywords:
-
-                        # currentKeywords 를 여러개의 self.keywordConversions 를 활용하여
-                        # 여러개로 만들고 만들어진걸 nextKeywords 에 추가함
-                        for conversion in self.keywordConversions:
-                            convertedStr = conversion(currentKeyword)
-                            nextKeywords.add(convertedStr)
-                            self.cachedSubKeywords.add(convertedStr)
-
-                    currentKeywords = nextKeywords.copy()
-
-            filteredSubMessages = set()
-
-            # 공백만 있거나 빈 문자열 걸러냄
-            for subKeyword in self.cachedSubKeywords:
-                if len(removeSpaceChar(subKeyword)) != 0: filteredSubMessages.add(subKeyword)
-
-            self.cachedSubKeywords = filteredSubMessages
+            self.cachingSubKeywords()
 
         return self.cachedSubKeywords
 
@@ -126,6 +136,41 @@ class GuildCensorManager:
         self.isKeywordChanged = True
 
 
+    def toJson(self) -> dict[str, int | list[str]]:
+        data = dict()
+
+        data["guildId"] = self.guild.id
+        data["keywords"] = list(self.censorKeywords)
+
+        return data
+
+    @classmethod
+    def fromJson(cls, bot: commands.Bot,
+                 data: dict[str, int | list[str]],
+
+                 keywordConversions: set[Callable[[str], str]],
+                 messageConversions: set[Callable[[str], str]],
+                 keywordConversionLayers: int,
+                 messageConversionLayers: int = 2
+                 ) -> 'GuildCensorManager':
+
+        guildCensorManager = GuildCensorManager(
+            bot.get_guild(data["guildId"]),
+            keywordConversions,
+            messageConversions,
+            keywordConversionLayers,
+            messageConversionLayers
+        )
+
+        for keyword in data['keywords']: guildCensorManager.addKeyword(keyword)
+        guildCensorManager.cachingSubKeywords()
+        guildCensorManager.isKeywordChanged = False
+
+        return guildCensorManager
+
+
+
+
 class CensorManager:
     def __init__(self,
                  keywordConversions: set[Callable[[str], str]] = set(),
@@ -140,6 +185,40 @@ class CensorManager:
         self.messageConversions: set[Callable[[str], str]] = messageConversions
 
         self.guildCensorManagers: dict[nextcord.Guild, GuildCensorManager] = dict()
+
+
+
+    def save(self):
+
+        savePath = getDataFolder("censor_keywords")
+
+        for guild, guildCensorManager in self.guildCensorManagers.items():
+            with open(f"{savePath}/{guild.id}.json", mode='a') as f:
+                ... # 일단 파일 생성 (a 모드로 파일 쓰면 이상하게 써짐)
+
+            with open(f"{savePath}/{guild.id}.json", mode='w') as f:
+                json.dump(guildCensorManager.toJson(), f, indent=4)
+
+    def load(self, bot: commands.Bot):
+        loadPath = getDataFolder("censor_keywords")
+
+        files = glob.glob(loadPath + '/*.json')
+
+        for file in files:
+            with open(file, 'r') as f:
+                data = json.load(f)
+
+            guildCensorManager = GuildCensorManager.fromJson(
+                bot,
+                data,
+                self.keywordConversions,
+                self.messageConversions,
+                self.keywordConversionLayers,
+                self.messageConversionLayers
+            )
+
+            self.guildCensorManagers[guildCensorManager.guild] = guildCensorManager
+
 
 
     def getGuildCensorManager(self, guild: nextcord.Guild, autoGenerate = True) -> GuildCensorManager:
