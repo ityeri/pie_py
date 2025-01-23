@@ -2,7 +2,7 @@ import nextcord
 from nextcord import SlashOption, Embed
 from nextcord.ext import commands
 from random import randint
-from commonModule.embed_message import sendErrorEmbed
+from common_module.embed_message import sendErrorEmbed
 
 
 class Random(commands.Cog):

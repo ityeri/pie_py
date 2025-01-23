@@ -1,6 +1,6 @@
 *.pyc
+__pycache__/
 _token.py
-src/data/*
-!src/data
+src/data/
 .vscode/
-*_*.m4a
+.idea/

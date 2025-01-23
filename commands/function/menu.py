@@ -5,8 +5,8 @@ from nextcord.ext import commands
 import copy
 import os
 import random
-from commonModule.embed_message import *
-from commonModule.menu import *
+from common_module.embed_message import *
+from common_module.menu import *
 
 
 

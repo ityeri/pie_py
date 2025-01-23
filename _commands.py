@@ -6,8 +6,8 @@ _commands: list[str] = [
     "function.random",
     "function.music",
 
-    # "guildManaging.common"
-    "guildManaging.censor",
+    "guild_managing.common",
+    "guild_managing.censor",
 
-    "search.imageSearch",
+    "search.image_search",
 ]

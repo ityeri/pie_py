@@ -3,7 +3,7 @@ from nextcord import VoiceClient, SlashOption, Embed, VoiceChannel
 from nextcord.ext import commands
 from pytubefix import YouTube, Search
 import time
-from commonModule.embed_message import sendErrorEmbed
+from common_module.embed_message import sendErrorEmbed
 import os
 import glob
 import random
