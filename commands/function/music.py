@@ -14,7 +14,6 @@ import random
 import asyncio          
 from typing import Callable, Awaitable
 
-
 class BotNotConnectedError(Exception): pass
 class UserNotConnectedError(Exception): pass
 
@@ -139,7 +138,8 @@ class GuildPlaylistManager:
 
 
         if error: 
-            print(f'================\n재생중 에러 발생!\n==================\n{error}')
+            error(f'재생중 에러 발생:')
+            error(error)
 
         # 다음 음악
         if self.next():
@@ -201,7 +201,6 @@ class GuildPlaylistManager:
     def setPlayMode(self, mode: int): self.playMode = mode
 
 def stopCallback(manager: GuildPlaylistManager): 
-    print("정지 콜백 호츌")
     manager.disconnect()
     manager.clearPlaylist()
 

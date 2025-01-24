@@ -1,6 +1,5 @@
 import glob
 import json
-import typing
 from typing import Callable
 
 from nextcord.ext import commands
@@ -118,14 +117,16 @@ class GuildCensorManager:
         # 메세지도 작업
         if subKeywords & subMessages:
             await message.delete()
+            print("===")
             print("삭제됨!")
             print("키워드:")
-            for subKeyword in subKeywords: print(subKeyword)
-            print("")
+            for subKeyword in subKeywords:
+                print(subKeyword)
 
+            print("===")
             print("메세지:")
-            for subMessage in subMessages: print(subMessage)
-            print("")
+            for subMessage in subMessages:
+                print(subMessage)
 
     def addKeyword(self, *keyword: str):
         self.censorKeywords.update(keyword)
