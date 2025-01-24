@@ -1,5 +1,3 @@
-import nextcord.ext
-
 from _token import TOKEN
 from pie_bot import PieBot
 from common_module.admin_manager import AdminManager
