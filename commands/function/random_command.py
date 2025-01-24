@@ -17,19 +17,19 @@ class Random(commands.Cog):
                        name="최솟값", description="난수의 최솟값을 설정하며 기입하지 않아도 됩니다", required=False)):
         
         if maxValue is None and minValue is None:
-            await interaction.send(randint(1, 6))
+            await interaction.send(str(randint(1, 6)))
         
         elif maxValue is not None and minValue is None:
-            if 0 < maxValue: await interaction.send(randint(1, maxValue))
-            elif maxValue < 0: await interaction.send(randint(maxValue, -1))
+            if 0 < maxValue: await interaction.send(str(randint(1, maxValue)))
+            elif maxValue < 0: await interaction.send(str(randint(maxValue, -1)))
             else: await sendErrorEmbed(interaction, "RangeError", "최댓값을 0으로 지정할수 없습니담")
         
         elif maxValue is None and minValue is not None:
             await sendErrorEmbed(interaction, "RangeError", "최솟값만 지정할수 없습니다")
 
         else:
-            if maxValue > minValue: await interaction.send(randint(minValue, maxValue))
-            if maxValue < minValue: await interaction.send(randint(maxValue, minValue))
+            if maxValue > minValue: await interaction.send(str(randint(minValue, maxValue)))
+            if maxValue < minValue: await interaction.send(str(randint(maxValue, minValue)))
 
 
 def setup(bot: commands.Bot):

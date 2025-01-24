@@ -7,7 +7,7 @@ import os
 import random
 from common_module.embed_message import *
 from common_module.menu import *
-
+from common_module.path_manager import getDataFolder
 
 
 class MenuRecommend(commands.Cog):
@@ -15,9 +15,11 @@ class MenuRecommend(commands.Cog):
         self.bot: commands.Bot = bot
 
         self.menuTable = MenuTable()
-        self.menuTable.loadMtb("menuTable.mtb")
+        try: self.menuTable.loadMtb("menu_table.mtb")
+        except FileNotFoundError: pass
         self.snackTable = SnackTable()
-        self.snackTable.loadStb("snackTable.stb")
+        try: self.snackTable.loadStb("menu_table.mtb")
+        except FileNotFoundError: pass
 
 
     @nextcord.slash_command(name='밥추천', description="밥먹을거 추천받고 싶다면")
