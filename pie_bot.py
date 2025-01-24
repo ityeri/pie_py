@@ -1,7 +1,7 @@
-import asyncio
+import traceback
 from typing import TYPE_CHECKING
 
-from aiohttp import TraceDnsResolveHostStartParams
+from typing_extensions import override
 
 if TYPE_CHECKING:
     from common_module.admin_manager import *
@@ -10,9 +10,7 @@ from _commands import _commands
 import os
 import nextcord.ext
 from nextcord.ext import commands
-from threading import Thread
-
-
+from nextcord.ext.commands import Context, errors
 
 
 class PieBot(commands.Bot):
@@ -49,11 +47,12 @@ class PieBot(commands.Bot):
             print(f" |  {commandPath} 등록 완료!")
 
     def startBot(self, token: str):
-        print("명령어를 로드 합니다..")
+
+        print("명령어 로딩중...")
         self.loadCommands()
         print("명령어 로딩 완료!\n")
 
-        print("봇에 연결합니다..")
+        print("봇에 연결합니다...")
         self.run(token)
 
     async def on_ready(self):
@@ -61,12 +60,22 @@ class PieBot(commands.Bot):
         print(f'봇 "{self.user}" 에 연결했습니다!')
         print("===\n")
 
-        # print("명령어를 동기화 합니다...")
-        # await self.sync_application_commands()
-        # print("명령어 동기화 완료!\n")
+        print("명령어를 동기화 합니다...")
+        await self.sync_application_commands()
+        print("명령어 동기화 완료!\n")
 
         print("관리자 정보 로드...")
         self.adminManager.load()
         print("관리자 정보 로딩 완료")
 
         print('\nTimings Reset\n')
+
+
+    @override
+    async def on_command_error(self, context: Context, exception: errors.CommandError) -> None:
+        print("===")
+        print(f"{context.command} 의 실행중 에러가 발생했습니다!")
+        print("===\n")
+
+        traceback.print_exception(type(exception), exception, exception.__traceback__)
+        print("")
