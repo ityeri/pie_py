@@ -1,13 +1,14 @@
 import asyncio
 from threading import Thread
 
+import nextcord
 from nextcord import SlashOption, CategoryChannel, VoiceChannel, StageChannel, ForumChannel, TextChannel
 from nextcord.ext import commands, tasks
 
 from common_module.censor_keyword_manager import *
 from common_module.text_tasker import *
 from pie_bot import PieBot
-from tqdm import tqdm
+
 
 
 # TODO: 먼 훗날에 시간이 된다면 영자판 에서 한자판 변환하는거 구현해
@@ -16,7 +17,6 @@ from tqdm import tqdm
 #     }
 # TODO: 화이트 리스트 등록 명령어 추가
 # TODO: manage_messages 권한 이슈 해결
-
 
 
 class Censor(commands.Cog):
