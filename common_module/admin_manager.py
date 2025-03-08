@@ -5,7 +5,7 @@ from nextcord import Guild, Role, Member
 from nextcord.ext import commands
 
 from common_module.exceptions import GuildMismatchError
-from common_module.path_manager import getDataFolder
+from common_module.path_manager import get_data_folder
 from pie_bot import PieBot
 
 
@@ -13,30 +13,30 @@ class GuildAdminManager:
     def __init__(self, guild: Guild):
         self.guild: Guild = guild
         self.admins: set[Member] = set()
-        self.adminRoles: set[Role] = set()
+        self.admin_roles: set[Role] = set()
     
-    def addRole(self, role: Role):
+    def add_role(self, role: Role):
         if role.guild != self.guild:
             raise GuildMismatchError("해당 역할은 길드에 없습니다")
-        self.adminRoles.add(role)
+        self.admin_roles.add(role)
     
-    def rmRole(self, role: Role):
+    def rm_role(self, role: Role):
         # 없는거 없엘라 하면 KeyError 알아서 발생
-        self.adminRoles.remove(role)
+        self.admin_roles.remove(role)
 
-    def addAdmin(self, member: Member):
+    def add_admin(self, member: Member):
         if member.guild != self.guild:
             raise GuildMismatchError("해당 유저는 길드에 없습니다")
         self.admins.add(member)
     
-    def rmAdmin(self, member: Member):
+    def rm_admin(self, member: Member):
         if member.guild != self.guild:
             raise GuildMismatchError("해당 유저는 길드에 없습니다")
         # 없는거 없엘라 하면 KeyError 알아서 발생
         self.admins.remove(member)
 
     
-    def isAdmin(self, member: Member) -> bool:
+    def is_admin(self, member: Member) -> bool:
         if member.guild != self.guild:
             raise GuildMismatchError("해당 유저는 길드에 없습니다")
 
@@ -46,97 +46,97 @@ class GuildAdminManager:
         if member in self.admins:
             return True
 
-        if self.getAdminRolesMemberHas(member):
+        if self.get_admin_roles_member_has(member):
             return True
 
         return False
 
-    def getAdminRolesMemberHas(self, member: Member):
-        return set(member.roles) & self.adminRoles
+    def get_admin_roles_member_has(self, member: Member):
+        return set(member.roles) & self.admin_roles
 
-    def isAdminRole(self, role: Role):
+    def is_admin_role(self, role: Role):
         if role.guild != self.guild:
             raise GuildMismatchError("해당 역할은 이 길드의 역할이 아닙니다")
-        return role in self.adminRoles
+        return role in self.admin_roles
 
 
-    def getAllAdmins(self) -> set[Member]:
+    def get_all_admins(self) -> set[Member]:
         admins: set[Member] = set()
 
         admins.add(self.guild.owner)
 
         admins.update(self.admins)
 
-        for role in self.adminRoles:
+        for role in self.admin_roles:
             admins.update(role.members)
 
         return admins
 
 
-    def toData(self) -> dict[str, list[int] | int]:
+    def to_data(self) -> dict[str, list[int] | int]:
         return {
             "guildId": self.guild.id,
             "admins": [admin.id for admin in self.admins],
-            "roles": [role.id for role in self.adminRoles]
+            "roles": [role.id for role in self.admin_roles]
         }
 
     @classmethod
-    def fromData(cls, data: dict[str, list[int] | int]) -> "GuildAdminManager":
-        guildAdminManager = cls(PieBot().get_guild(data["guildId"]))
+    def from_data(cls, data: dict[str, list[int] | int]) -> "GuildAdminManager":
+        guild_admin_manager = cls(PieBot().get_guild(data["guildId"]))
 
-        for userId in data["admins"]:
-            guildAdminManager.addAdmin(guildAdminManager.guild.get_member(userId))
+        for user_id in data["admins"]:
+            guild_admin_manager.add_admin(guild_admin_manager.guild.get_member(user_id))
 
-        for roleId in data["roles"]:
-            guildAdminManager.addRole(guildAdminManager.guild.get_role(roleId))
+        for role_id in data["roles"]:
+            guild_admin_manager.add_role(guild_admin_manager.guild.get_role(role_id))
 
-        return guildAdminManager
+        return guild_admin_manager
 
 
 
 class AdminManager:
     def __init__(self):
-        self.guildAdminManagers: dict[int, GuildAdminManager] = dict()
+        self.guild_admin_managers: dict[int, GuildAdminManager] = dict()
 
-    def getGuildAdminManager(self, guild: Guild, autoGenerate = True) -> GuildAdminManager:
-        try: guildAdminManager = self.guildAdminManagers[guild.id]
+    def get_guild_admin_manager(self, guild: Guild, auto_generate = True) -> GuildAdminManager:
+        try: guild_admin_manager = self.guild_admin_managers[guild.id]
         except KeyError:
-            if autoGenerate:
-                return self.newGuildAdminManager(guild)
+            if auto_generate:
+                return self.new_guild_admin_manager(guild)
             else: raise KeyError("그런 길드는 없다 이말이야")
 
-        return guildAdminManager
+        return guild_admin_manager
 
-    def newGuildAdminManager(self, guild: Guild) -> GuildAdminManager:
-        if guild.id in self.guildAdminManagers:
+    def new_guild_admin_manager(self, guild: Guild) -> GuildAdminManager:
+        if guild.id in self.guild_admin_managers:
             raise ValueError("GuildAdminManager 는 중복될수 없븐ㄷ이나")
 
-        self.guildAdminManagers[guild.id] = GuildAdminManager(guild)
+        self.guild_admin_managers[guild.id] = GuildAdminManager(guild)
 
-        return self.guildAdminManagers[guild.id]
+        return self.guild_admin_managers[guild.id]
 
 
 
     def save(self):
 
-        savePath = getDataFolder("admins")
+        save_path = get_data_folder("admins")
 
-        for guildId, guildAdminManager in self.guildAdminManagers.items():
-            with open(f"{savePath}/{guildId}.json", mode='a') as f:
+        for guild_id, guild_admin_manager in self.guild_admin_managers.items():
+            with open(f"{save_path}/{guild_id}.json", mode='a') as f:
                 ... # 일단 파일 생성 (a 모드로 파일 쓰면 이상하게 써짐)
 
-            with open(f"{savePath}/{guildId}.json", mode='w') as f:
-                json.dump(guildAdminManager.toData(), f, indent=4)
+            with open(f"{save_path}/{guild_id}.json", mode='w') as f:
+                json.dump(guild_admin_manager.to_data(), f, indent=4)
 
     def load(self):
-        loadPath = getDataFolder("admins")
+        load_path = get_data_folder("admins")
 
-        files = glob.glob(loadPath + '/*.json')
+        files = glob.glob(load_path + '/*.json')
 
         for file in files:
             with open(file, 'r') as f:
                 data = json.load(f)
 
-            guildAdminManager = GuildAdminManager.fromData(data)
+            guild_admin_manager = GuildAdminManager.from_data(data)
 
-            self.guildAdminManagers[guildAdminManager.guild.id] = guildAdminManager
+            self.guild_admin_managers[guild_admin_manager.guild.id] = guild_admin_manager

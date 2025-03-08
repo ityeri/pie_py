@@ -12,20 +12,20 @@ class Color:
     YELLOW = nextcord.Color.from_rgb(238, 198, 108)
     RED = nextcord.Color.from_rgb(255, 110, 100)
 
-async def sendErrorEmbed(interaction: Interaction, errorTitle: str, description: str=None,
-                         ephemeral: bool=False, followup: bool=False, footer: str=None):
-    embed = Embed(title=errorTitle,
+async def send_error_embed(interaction: Interaction, error_title: str, description: str=None,
+                           ephemeral: bool=False, followup: bool=False, footer: str=None):
+    embed = Embed(title=error_title,
                   description=description,
                   color=Color.RED,
-    )
+                  )
     if footer: embed.set_footer(text=footer)
 
     if not followup: await interaction.send(embed=embed, ephemeral=ephemeral)
     else: await interaction.followup.send(embed=embed, ephemeral=ephemeral)
 
-async def sendWarnEmbed(interaction: Interaction, warnTitle: str, description: str=None,
-                        ephemeral: bool=False, followup: bool=False, footer: str=None):
-    embed = Embed(title=warnTitle,
+async def send_warn_embed(interaction: Interaction, warn_title: str, description: str=None,
+                          ephemeral: bool=False, followup: bool=False, footer: str=None):
+    embed = Embed(title=warn_title,
                   description=description,
                   color=Color.YELLOW,
                   )
@@ -34,8 +34,8 @@ async def sendWarnEmbed(interaction: Interaction, warnTitle: str, description: s
     if not followup: await interaction.send(embed=embed, ephemeral=ephemeral)
     else: await interaction.followup.send(embed=embed, ephemeral=ephemeral)
 
-async def sendCompleteEmbed(interaction: Interaction, title: str=None, description: str=None,
-                        ephemeral: bool=False, followup: bool=False):
+async def send_complete_embed(interaction: Interaction, title: str=None, description: str=None,
+                              ephemeral: bool=False, followup: bool=False):
     embed = Embed(title=title, description=description,
                   color=Color.SKY,
                   )

@@ -26,5 +26,5 @@ class AsyncMessageTask(AsyncTask):
         self.message: Message = message
         self.interaction: Interaction = interaction
     
-    async def setMessage(self, content: str = None, **kargs):
+    async def set_message(self, content: str = None, **kargs):
         await self.message.edit(content, **kargs)

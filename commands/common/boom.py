@@ -17,18 +17,18 @@ class BoomTask(AsyncMessageTask):
         if self.status == status.WAIT:
             self.status = status.COUTING
             self.count = 5
-            await self.setMessage(f"자폭까지 {self.count}초 남음..")
+            await self.set_message(f"자폭까지 {self.count}초 남음..")
         
         elif self.status == status.COUTING:
             self.count -= 1
 
             if self.count != 0:
-                await self.setMessage(f"자폭까지 {self.count}초 남음..")
+                await self.set_message(f"자폭까지 {self.count}초 남음..")
             
             else:
                 with open("boom.gif", "rb") as gif_file:
                     gif = nextcord.File(gif_file, filename="boom.gif")
-                    await self.setMessage(file=gif)
+                    await self.set_message(file=gif)
                 
                 await self.message.delete(delay=10)
 

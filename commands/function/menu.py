@@ -7,59 +7,59 @@ import os
 import random
 from common_module.embed_message import *
 from common_module.menu import *
-from common_module.path_manager import getDataFolder
+from common_module.path_manager import get_data_folder
 
 
 class MenuRecommend(commands.Cog):
     def __init__(self, bot):
         self.bot: commands.Bot = bot
 
-        self.menuTable = MenuTable()
-        try: self.menuTable.loadMtb("menu_table.mtb")
+        self.menu_table = MenuTable()
+        try: self.menu_table.loadMtb("menu_table.mtb")
         except FileNotFoundError: pass
-        self.snackTable = SnackTable()
-        try: self.snackTable.loadStb("menu_table.mtb")
+        self.snack_table = SnackTable()
+        try: self.snack_table.loadStb("menu_table.mtb")
         except FileNotFoundError: pass
 
 
     @nextcord.slash_command(name='밥추천', description="밥먹을거 추천받고 싶다면")
-    async def menuRecommend(self, interaction: nextcord.Interaction, 
-                            
-                            menuType: str = SlashOption(name="음식종류", 
-                                                      description="음식의 종류를 골라주세요",
-                                                      choices=["한식", "양식", "일식", "중식"], required=False),
+    async def menu_recommend(self, interaction: nextcord.Interaction,
 
-                            taste: str = SlashOption(name="음식의맛", 
+                             menu_type: str = SlashOption(name="음식종류",
+                                                         description="음식의 종류를 골라주세요",
+                                                         choices=["한식", "양식", "일식", "중식"], required=False),
+
+                             taste: str = SlashOption(name="음식의맛",
                                                       description="맛을 골라주세요",
                                                       choices=["짠맛", "단맛", "삼삼한 맛"], required=False)
-                                                      ):
+                             ):
 
-        filteredMenuTable = copy.copy(self.menuTable)
+        filtered_menu_table = copy.copy(self.menu_table)
 
         # 음식 종류, 맛 필터링
-        filteredMenuTable = filteredMenuTable.filter(type=menuType, taste=Taste.strToTaste(taste))
+        filtered_menu_table = filtered_menu_table.filter(type=menu_type, taste=Taste.str_to_taste(taste))
 
         # 몇가지 예외처리
-        if len(filteredMenuTable.menuList) == 0:
-            await sendErrorEmbed(interaction, "MenuFoundError!!!", "조건에 맞는 메뉴를 찾을수 없습니다...")
+        if len(filtered_menu_table.menu_list) == 0:
+            await send_error_embed(interaction, "MenuFoundError!!!", "조건에 맞는 메뉴를 찾을수 없습니다...")
             return
 
-        currentHour = time.localtime().tm_hour
+        current_hour = time.localtime().tm_hour
 
         # 현재 시각과 맞는 메뉴는 3배의 비율로 뽑히도록 가중치 설정
-        weights = [3 if menu.isInTime(currentHour) else 1 
-                   for menu in filteredMenuTable.menuList]
+        weights = [3 if menu.is_in_time(current_hour) else 1
+                   for menu in filtered_menu_table.menu_list]
 
         # 점수(가중치) 기반으로 메뉴 하나 또는 지정한 갯수만큼 뽑
-        selectedMenu = random.choices(filteredMenuTable.menuList, weights=weights, k=1)[0]
+        selected_menu = random.choices(filtered_menu_table.menu_list, weights=weights, k=1)[0]
 
 
 
-        embed = nextcord.Embed(title="", description=f'당신은 지금 당장 \n**{selectedMenu.name}** \n을/를 먹어야 한다!', color=0xd7983c)
+        embed = nextcord.Embed(title="", description=f'당신은 지금 당장 \n**{selected_menu.name}** \n을/를 먹어야 한다!', color=0xd7983c)
 
-        if selectedMenu.menuImgPath != None:
-            file = nextcord.File(f"menuImgs/{selectedMenu.menuImgPath}", filename=f"{selectedMenu.menuImgPath}")
-            embed.set_image(f"attachment://{selectedMenu.menuImgPath}")
+        if selected_menu.menu_img_path is not None:
+            file = nextcord.File(f"menuImgs/{selected_menu.menu_img_path}", filename=f"{selected_menu.menu_img_path}")
+            embed.set_image(f"attachment://{selected_menu.menu_img_path}")
 
             await interaction.send(embed=embed, file=file)
         else:
@@ -67,23 +67,23 @@ class MenuRecommend(commands.Cog):
 
 
     @nextcord.slash_command(name="간식추천", description="조금 출출하다면")
-    async def snackRecommand(self, interaction: nextcord.Interaction,
-                             taste: str = SlashOption(name="맛", description="맛을 골라 주세요", 
-                                                      choices=["짠맛", "단맛", "삼삼한 맛"], required=False)
-                             ):
+    async def snack_recommand(self, interaction: nextcord.Interaction,
+                              taste: str = SlashOption(name="맛", description="맛을 골라 주세요",
+                                                       choices=["짠맛", "단맛", "삼삼한 맛"], required=False)
+                              ):
         
-        filteredTable = self.snackTable.filter(taste=Taste.strToTaste(taste))
+        filtered_table = self.snack_table.filter(taste=Taste.str_to_taste(taste))
 
-        if len(filteredTable.snackList) == 0: 
-            await sendErrorEmbed(interaction, "SnackNotFoundError!!!", "조건에 맞는 간식을 찾을수 없습니다..")
+        if len(filtered_table.snack_list) == 0:
+            await send_error_embed(interaction, "SnackNotFoundError!!!", "조건에 맞는 간식을 찾을수 없습니다..")
             return
 
-        selectedSnack = random.choices(filteredTable.snackList, k=1)[0]
-        embed = nextcord.Embed(title="", description=f'지금 당장 \n**{selectedSnack.name}** \n을/를 먹는게 어떰', color=0xf9aec8)
+        selected_snack = random.choices(filtered_table.snack_list, k=1)[0]
+        embed = nextcord.Embed(title="", description=f'지금 당장 \n**{selected_snack.name}** \n을/를 먹는게 어떰', color=0xf9aec8)
 
-        if selectedSnack.imgPath != None:
-            file = nextcord.File(f"menuImgs/{selectedSnack.imgPath}", filename=f"{selectedSnack.imgPath}")
-            embed.set_image(f"attachment://{selectedSnack.imgPath}")
+        if selected_snack.img_path != None:
+            file = nextcord.File(f"menuImgs/{selected_snack.img_path}", filename=f"{selected_snack.img_path}")
+            embed.set_image(f"attachment://{selected_snack.img_path}")
 
             await interaction.send(embed=embed, file=file)
         else:

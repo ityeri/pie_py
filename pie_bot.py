@@ -26,11 +26,11 @@ class PieBot(commands.Bot):
         intents = nextcord.Intents.all()
         super().__init__(intents=intents)
 
-        self.adminManager: AdminManager | None = None
+        self.admin_manager: AdminManager | None = None
 
-    def setAdminManager(self, adminManager: 'AdminManager'): self.adminManager = adminManager
+    def set_admin_manager(self, admin_manager: 'AdminManager'): self.admin_manager = admin_manager
 
-    def initFolder(self):
+    def init_folder(self):
 
         if not (os.path.exists("src/") and os.path.isdir("src/")):
             os.mkdir("src/")
@@ -39,17 +39,17 @@ class PieBot(commands.Bot):
         if not (os.path.exists("data/") and os.path.isdir("data/")):
             os.mkdir("data/")
 
-    def loadCommands(self):
-        for commandPath in _commands:
+    def load_commands(self):
+        for command_path in _commands:
             # 혹시 익스텐션 로드 하는데 에러났니? _command.py 파일에 콤마 잘 넣었는지 봐봐
-            self.load_extension(f"commands.{commandPath}")
+            self.load_extension(f"commands.{command_path}")
 
-            print(f" |  {commandPath} 등록 완료!")
+            print(f" |  {command_path} 등록 완료!")
 
-    def startBot(self, token: str):
+    def start_bot(self, token: str):
 
         print("명령어 로딩중...")
-        self.loadCommands()
+        self.load_commands()
         print("명령어 로딩 완료!\n")
 
         print("봇에 연결합니다...")
@@ -65,7 +65,7 @@ class PieBot(commands.Bot):
         print("명령어 동기화 완료!\n")
 
         print("관리자 정보 로드...")
-        self.adminManager.load()
+        self.admin_manager.load()
         print("관리자 정보 로딩 완료")
 
         print('\nTimings Reset\n')

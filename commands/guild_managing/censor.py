@@ -22,82 +22,81 @@ from pie_bot import PieBot
 class Censor(commands.Cog):
     def __init__(self, bot):
         self.bot: PieBot = bot
-        self.censorManager: CensorManager = CensorManager(
-            keywordConversions= {
-                replaceSSangjamo,
-                removeSpecialChar,
-                filterChosungOnly,
-                filterHangulOnly,
-                filterCompleteHangulOnly,
-                filterAlphabetOnly,
-                toLowerCase,
-                removeSpaceChar,
+        self.censor_manager: CensorManager = CensorManager(
+            keyword_conversions= {
+                replace_sangjamo,
+                remove_special_char,
+                filter_chosung_only,
+                filter_hangul_only,
+                filter_complete_hangul_only,
+                filter_alphabet_only,
+                to_lower_case,
+                remove_space_char,
             },
-            messageConversions= {
-                replaceSSangjamo,
-                removeSpecialChar,
+            message_conversions= {
+                replace_sangjamo,
+                remove_special_char,
                 # filterChosung,
-                filterHangulOnly,
-                filterCompleteHangulOnly,
-                filterAlphabetOnly,
-                toLowerCase,
-                removeSpaceChar,
+                filter_hangul_only,
+                filter_complete_hangul_only,
+                to_lower_case,
+                remove_space_char,
             },
-            keywordConversionLayers=3,
-            messageConversionLayers=2
+            keyword_conversion_layers=3,
+            message_conversion_layers=2
         )
-        self.eventLoop = asyncio.get_event_loop()
+        self.event_loop = asyncio.get_event_loop()
 
 
 
     @commands.Cog.listener()
     async def on_ready(self):
-        self.censorManager.load(self.bot)
+        self.censor_manager.load(self.bot)
 
-        self.pastMessageCensor.start()
+        self.past_message_censor.start()
 
 
 
     @tasks.loop(seconds=1)
-    async def pastMessageCensor(self):
+    async def past_message_censor(self):
         for guild in self.bot.guilds:
             for channel in guild.channels:
 
                 if isinstance(channel, VoiceChannel):
-                    voiceChannel: VoiceChannel = channel
-                    messages = await voiceChannel.history(limit=10).flatten()
+                    voice_channel: VoiceChannel = channel
+                    messages = await voice_channel.history(limit=10).flatten()
                     [
-                        (await self.censorManager.getGuildCensorManager(guild)
-                         .onMessage(message))
+                        (await self.censor_manager.get_guild_censor_manager(guild)
+                         .on_message(message))
                         for message in messages
                     ]
 
                 elif isinstance(channel, StageChannel):
-                    stageChannel: StageChannel = channel
-                    messages = await stageChannel.history(limit=10).flatten()
+                    stage_channel: StageChannel = channel
+                    messages = await stage_channel.history(limit=10).flatten()
                     [
-                        (await self.censorManager.getGuildCensorManager(guild)
-                         .onMessage(message))
+                        (await self.censor_manager.get_guild_censor_manager(guild)
+                         .on_message(message))
                         for message in messages
                     ]
 
                 elif isinstance(channel, TextChannel):
-                    textChannel: TextChannel = channel
-                    messages = await textChannel.history(limit=10).flatten()
+                    text_channel: TextChannel = channel
+                    messages = await text_channel.history(limit=10).flatten()
                     [
-                        (await self.censorManager.getGuildCensorManager(guild)
-                         .onMessage(message))
+                        (await self.censor_manager.get_guild_censor_manager(guild)
+                         .on_message(message))
                         for message in messages
                     ]
 
                 elif isinstance(channel, ForumChannel):
-                    forumChannel: ForumChannel = channel
-                    threads = sorted(forumChannel.threads, key=lambda t: t.created_at, reverse=True)
+                    forum_channel: ForumChannel = channel
+                    threads = sorted(forum_channel.threads, key=lambda t: t.created_at, reverse=True)
                     for thread in threads[:10]:
                         messages = await thread.history(limit=10).flatten()
                         [
-                            (await self.censorManager.getGuildCensorManager(guild)
-                             .onMessage(message))
+                            (await self.censor_manager.get_guild_censor_manager(guild)
+                             .on_message(message))
                             for message in messages
                         ]
 
@@ -105,66 +104,66 @@ class Censor(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message: nextcord.Message):
 
-        await (self.censorManager.getGuildCensorManager(message.guild)
-               .onMessage(message))
+        await (self.censor_manager.get_guild_censor_manager(message.guild)
+               .on_message(message))
 
 
     @nextcord.slash_command(name="검열등록", description="검열할 단어를 등록합니다")
-    async def keywordRegister(self, interaction: nextcord.Interaction,
-                              keyword: str = SlashOption(name="단어")):
+    async def keyword_register(self, interaction: nextcord.Interaction,
+                               keyword: str = SlashOption(name="단어")):
 
-        if (self.bot.adminManager.getGuildAdminManager(interaction.guild)
-                .isAdmin(interaction.user)): return
+        if (self.bot.admin_manager.get_guild_admin_manager(interaction.guild)
+                .is_admin(interaction.user)): return
 
-        (self.censorManager.getGuildCensorManager(interaction.guild)
-         .addKeyword(keyword))
+        (self.censor_manager.get_guild_censor_manager(interaction.guild)
+         .add_keyword(keyword))
 
-        await sendCompleteEmbed(interaction,
-                                description=f'검열 단어 `{keyword}` 가 정상적으로 등록 되었습니다!', ephemeral=True
-                                )
+        await send_complete_embed(interaction,
+                                  description=f'검열 단어 `{keyword}` 가 정상적으로 등록 되었습니다!', ephemeral=True
+                                  )
 
-        self.censorManager.save()
+        self.censor_manager.save()
 
 
 
     @nextcord.slash_command(name="검열삭제", description="특정 단어를 검열 리스트에서 제거합니다")
     @commands.has_permissions(manage_messages=True)
-    async def keywordRemove(self, interaction: nextcord.Interaction,
-                            keyword: str = SlashOption(name="단어")):
+    async def keyword_remove(self, interaction: nextcord.Interaction,
+                             keyword: str = SlashOption(name="단어")):
 
-        if (self.bot.adminManager.getGuildAdminManager(interaction.guild)
-                .isAdmin(interaction.user)): return
+        if (self.bot.admin_manager.get_guild_admin_manager(interaction.guild)
+                .is_admin(interaction.user)): return
 
-        try: (self.censorManager.getGuildCensorManager(interaction.guild)
-              .rmKeyword(keyword))
+        try: (self.censor_manager.get_guild_censor_manager(interaction.guild)
+              .rm_keyword(keyword))
         except KeyError:
-            await sendErrorEmbed(interaction, "KeywordNotFoundError!!!",
-                                 description=f"검열 리스트에서 단어 `{keyword}` 를 찾을수 없습니다!",
-                                 footer="(명령어 `/검열리스트` 를 통해 이 서버에서 검열되는 단어를 확인할수 있습니다)",
-                                 ephemeral=True)
+            await send_error_embed(interaction, "KeywordNotFoundError!!!",
+                                   description=f"검열 리스트에서 단어 `{keyword}` 를 찾을수 없습니다!",
+                                   footer="(명령어 `/검열리스트` 를 통해 이 서버에서 검열되는 단어를 확인할수 있습니다)",
+                                   ephemeral=True)
             return
 
-        await sendCompleteEmbed(interaction,
-                                description="단어 `{keyword}` 를 검열 리스트에서 제거했습니다", ephemeral=True)
+        await send_complete_embed(interaction,
+                                  description="단어 `{keyword}` 를 검열 리스트에서 제거했습니다", ephemeral=True)
 
-        self.censorManager.save()
+        self.censor_manager.save()
 
 
 
     @nextcord.slash_command(name="검열단어", description="이 서버에서 검열되는 단어들을 확인합니다")
-    async def listCensorKeywords(self, interaction: nextcord.Interaction):
-        keywords = self.censorManager.getGuildCensorManager(interaction.guild).censorKeywords
+    async def list_censor_keywords(self, interaction: nextcord.Interaction):
+        keywords = self.censor_manager.get_guild_censor_manager(interaction.guild).censor_keywords
 
         if not keywords:
-            await sendWarnEmbed(interaction, "NoCensorKeywordWarning!",
+            await send_warn_embed(interaction, "NoCensorKeywordWarning!",
                                 "이 서버에서 검열되는 단어가 없습니다", ephemeral=True)
             return
 
-        await sendCompleteEmbed(interaction,
-                                title=f'이 서버에서 사용할시 삭제되는 단어들: \n**주의: 매우 민감한 단어가 포함되어 있을수 있습니다**',
-                                description=f"||{''.join([f'`{keyword}`' for keyword in keywords])}||", ephemeral=True)
+        await send_complete_embed(interaction,
+                                  title=f'이 서버에서 사용할시 삭제되는 단어들: \n**주의: 매우 민감한 단어가 포함되어 있을수 있습니다**',
+                                  description=f"||{''.join([f'`{keyword}`' for keyword in keywords])}||", ephemeral=True)
 
-        self.censorManager.save()
+        self.censor_manager.save()
 
 
 def setup(bot: commands.Bot):
