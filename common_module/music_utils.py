@@ -5,9 +5,14 @@ import time
 from typing import Callable, Awaitable
 
 import nextcord
-import pytubefix
+
 from nextcord import FFmpegPCMAudio
+
+import pytubefix
 from pytubefix import YouTube
+
+# import pytube as pytube
+# from pytube import YouTube
 
 from common_module.exceptions import ChannelMismatchError, BotNotConnectedError, UserNotConnectedError
 
@@ -27,7 +32,10 @@ class AudioFile:
         self.audio = None
         self.audio = FFmpegPCMAudio(source=self.path,
                                     executable="ffmpeg",
-                                    options="-filter:a 'volume=0.7'")
+                                    # before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
+                                    options='-ar 48000 -filter:a "volume=0.1" -vn -loglevel error')
+
+        pass
 
     def delete(self):
         if self.audio is not None:
