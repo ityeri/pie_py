@@ -2,7 +2,7 @@ import hgtk
 import hgtk.exception
 
 
-def isCompleteHangul(char: str) -> bool:
+def is_complete_hangul(char: str) -> bool:
     if len(char) != 1: raise hgtk.exception.NotLetterException
 
     if hgtk.checker.is_hangul(char):
@@ -13,7 +13,7 @@ def isCompleteHangul(char: str) -> bool:
     else: hgtk.exception.NotHangulException
 
 
-def replaceMoe(text, oldMoe: str, newMoe: str):
+def replace_moe(text, oldMoe: str, newMoe: str):
     # ㅐㅒㅔㅖ 전부 통일하는거
 
     result = ''
@@ -46,7 +46,7 @@ def replaceMoe(text, oldMoe: str, newMoe: str):
     
     return result
 
-def replaceDoubleJae(text):
+def replace_double_jae(text):
     # 쌍자음을 단자음으로 매핑
     doubleJaeTable = {
         'ㄲ': 'ㄱ', 
@@ -106,7 +106,7 @@ def replaceDoubleJae(text):
     
     return result
 
-def replaceDoubleMoe(text):
+def replace_double_moe(text):
     # 쌍모음을 단모음으로
     doubleMoeTable = {
         'ㅒ': 'ㅐ',
@@ -148,7 +148,7 @@ def replaceDoubleMoe(text):
     return result
 
 
-def multiReplace(text: str, new: str, *olds: str):
+def multi_replace(text: str, new: str, *olds: str):
     for oldPart in olds:
         if len(oldPart) == 1:
             old = oldPart
@@ -162,21 +162,21 @@ def multiReplace(text: str, new: str, *olds: str):
 
 
 # 검열 코드에서 주로 사용되는 함수들
-def replaceSSangjamo(text: str) -> str:
+def replace_sangjamo(text: str) -> str:
     # 쌍자모를 전부 단자모로 만들고, ㅐㅔㅒㅖ 를 싸그리 ㅐ 로 바꿈
-    text = replaceDoubleJae(text)
-    text = replaceMoe(text, 'ㅐㅔㅒㅖ', 'ㅐ')
+    text = replace_double_jae(text)
+    text = replace_moe(text, 'ㅐㅔㅒㅖ', 'ㅐ')
     return text
 
-def removeSpecialChar(text: str) -> str:
+def remove_special_char(text: str) -> str:
     # 특수문자, 공백, 줄바꿈 제거
-    text = multiReplace(text, '', "1234567890!@#$%^&*()`-=/\,.<>[]{};:")
-    text = removeSpaceChar(text)
+    text = multi_replace(text, '', "1234567890!@#$%^&*()`-=/\,.<>[]{};:")
+    text = remove_space_char(text)
     return text
 
 
 
-def filterChosungOnly(text: str) -> str:
+def filter_chosung_only(text: str) -> str:
     # 초성만 남기고 한글이 아니거나, 모음만 있을경우는 무시
     result = str()
 
@@ -202,7 +202,7 @@ def filterChosungOnly(text: str) -> str:
 
     return result
 
-def filterHangulOnly(text: str) -> str:
+def filter_hangul_only(text: str) -> str:
     # 한글 제외 다 제거 (불완전 한글 포함 ㅇ ㄷ ㅔ 등등)
     result = str()
     for char in text:
@@ -211,16 +211,16 @@ def filterHangulOnly(text: str) -> str:
 
     return result
 
-def filterCompleteHangulOnly(text: str) -> str:
+def filter_complete_hangul_only(text: str) -> str:
     # 한글 완전체 제외, 다 제거
     result = str()
     for char in text:
-        if hgtk.checker.is_hangul(char) and isCompleteHangul(char):
+        if hgtk.checker.is_hangul(char) and is_complete_hangul(char):
             result += char
 
     return result
 
-def filterAlphabetOnly(text: str) -> str:
+def filter_alphabet_only(text: str) -> str:
     # 영문 빼고 전부 제거
     result = str()
     for char in text:
@@ -231,12 +231,12 @@ def filterAlphabetOnly(text: str) -> str:
 
 
 
-def toLowerCase(text: str) -> str:
+def to_lower_case(text: str) -> str:
     return text.lower()
 
-def removeSpaceChar(text: str) -> str:
+def remove_space_char(text: str) -> str:
     # 이상한 공백 문자, 줄바꿈 제거
-    text = multiReplace(text, '',
+    text = multi_replace(text, '',
                                     ' ', '\n', '	',
                                     '\u0020\u00a0'
                                     #  u+2000 ~ u+200f

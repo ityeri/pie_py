@@ -6,7 +6,7 @@ from nextcord.ext import commands
 class Loan:
     def __init__(self, bankbook: 'UserBankbook'):
         self.amount: int
-        self.interestRate: float
+        self.interest_rate: float
         self.bankbook: UserBankbook = UserBankbook
 
     def loan(self, amount: int): self.amount += amount
@@ -14,7 +14,7 @@ class Loan:
     def repayment(self, amount: int):
         ...
     
-    def chargeInterest(self):
+    def charge_interest(self):
         self.bankbook.asset -= self.amount * (self.interestRate / 100)
 
 class UserBankbook:

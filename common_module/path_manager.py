@@ -1,6 +1,6 @@
 import os
 
-def getDataFolder(path: str):
+def get_data_folder(path: str):
     dataPathExist = False
 
     if not( os.path.exists('data') and os.path.isdir('data') ):
