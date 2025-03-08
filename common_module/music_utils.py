@@ -33,7 +33,7 @@ class AudioFile:
         self.audio = FFmpegPCMAudio(source=self.path,
                                     executable="ffmpeg",
                                     # before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
-                                    options='-ar 48000 -filter:a "volume=0.1" -vn -loglevel error')
+                                    options='-ar 48000 -filter:a "volume=0.2" -vn -loglevel error')
 
         pass
 
