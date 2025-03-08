@@ -1,23 +1,23 @@
-import nextcord
-from nextcord import SlashOption, Embed, FFmpegPCMAudio
-from nextcord.ext import commands
-import pytubefix
-from pytubefix import YouTube, Search
+import asyncio
+import glob
+import os
 import time
 
+import nextcord
+from nextcord import SlashOption, Embed
+from nextcord.ext import commands
+
+import pytubefix
 import pytubefix.exceptions
-import os
-import glob
-import random
-import asyncio
-from typing import Callable, Awaitable
+from pytubefix import YouTube, Search
+
+# import pytube
+# import pytube.exceptions
+# from pytube import YouTube, Search
 
 from common_module.embed_message import send_error_embed
 from common_module.exceptions import *
 from common_module.music_utils import PlaylistManager, download_video_timeout, YoutubeAudioFile, PlayMode, stop_callback
-
-
-
 
 
 class Music(commands.Cog):
@@ -63,7 +63,7 @@ class Music(commands.Cog):
         await interaction.response.defer() # 다운로드엔 시간이 걸릴수 있기에 응답 지연 설정
 
         # 영상의 사용 가능성 체크 (아동용 아닌지, 외부 다운 막힌건 아닌지 등등) + 스트림 가져오기
-        try: stream: pytubefix.Stream = yt.streams.filter(only_audio=True).first()
+        try: stream: pytubefix.Stream = yt.streams.filter(only_audio=True, abr="128kbps").first()
 
         except pytubefix.exceptions.VideoUnavailable:
             await send_error_embed(interaction, "VideoSettingsError!!!", """해당 영상을 재생할수 없습니다!
@@ -73,7 +73,7 @@ class Music(commands.Cog):
 
 
         # 시간제한 걸고 영상 다운
-        # "musics/시간.소수점시간.m4a" 형식의 경로 생성
+        # "musics/시간_소수점시간.m4a" 형식의 경로 생성
         audio_file_path = f'musics/{time.time()}'.replace('.', '_') + '.m4a'
 
         try:
