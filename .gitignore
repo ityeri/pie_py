@@ -4,3 +4,7 @@ _token.py
 src/data/
 .vscode/
 .idea/
+.venv/
+
+# 맥 os 메타데이터 파일
+._*
