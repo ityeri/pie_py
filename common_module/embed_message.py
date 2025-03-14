@@ -35,10 +35,13 @@ async def send_warn_embed(interaction: Interaction, warn_title: str, description
     else: await interaction.followup.send(embed=embed, ephemeral=ephemeral)
 
 async def send_complete_embed(interaction: Interaction, title: str=None, description: str=None,
-                              ephemeral: bool=False, followup: bool=False):
-    embed = Embed(title=title, description=description,
+                              ephemeral: bool=False, followup: bool=False, footer: str=None):
+    embed = Embed(title=title,
+                  description=description,
                   color=Color.SKY,
                   )
+
+    if footer: embed.set_footer(text=footer)
 
     if not followup: await interaction.send(embed=embed, ephemeral=ephemeral)
     else: await interaction.followup.send(embed=embed, ephemeral=ephemeral)
