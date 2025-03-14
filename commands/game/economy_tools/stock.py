@@ -7,9 +7,9 @@ if __name__ == "__main__":
 
 @abstractmethod
 class Stock:
-    def __init__(self, symbol: str, display_name: str):
+    def __init__(self, symbol: str, name: str):
         self.symbol: str = symbol
-        self.display_name = display_name
+        self.name = name
 
     def __eq__(self, other):
         if isinstance(other, Stock):
@@ -18,5 +18,5 @@ class Stock:
 
     def __hash__(self): return hash(self.symbol)
 
-    def get_krw(self) -> float:
-        return ccxt.upbit().fetch_ticker(self.symbol + '/KRW')['last']
+    def get_krw(self, amount: float=1) -> float:
+        return ccxt.upbit().fetch_ticker(self.symbol + '/KRW')['last'] * amount
