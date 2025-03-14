@@ -19,7 +19,17 @@ class UserBankbook:
             self.get_asset(stock).buy(amount)
             self.money -= stock.get_krw(amount)
             return True
+
         else: return False
+
+    def sell(self, stock: Stock, amount: float) -> bool:
+        if self.get_asset(stock).sell(amount):
+            self.money += stock.get_krw(amount)
+            return True
+
+        else: return False
+
+
 
     def get_asset(self, stock: Stock, auto_gen: bool=True) -> Asset:
         if stock not in self.assets and auto_gen:
