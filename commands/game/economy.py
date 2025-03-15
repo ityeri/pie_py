@@ -1,3 +1,4 @@
+import json
 import threading
 import time
 
@@ -12,7 +13,13 @@ from common_module.embed_message import send_complete_embed, send_error_embed, C
 class Economy(commands.Cog):
     def __init__(self, bot):
         self.bot: commands.Bot = bot
-        self.bank_book_manager = economy_tools.BankBookManager()
+
+        with open("bank_books_data.json", "a", encoding="utf-8") as f: ...
+        with open("bank_books_data.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        self.bank_book_manager = (
+            economy_tools.BankBookManager.from_json(data, self.bot, economy_tools.coins_manager))
 
         # print("코인/주식 시세를 초기 업데이트 합니다")
         # stocks_count = len(economy_tools.coins_manager.stocks)
@@ -35,12 +42,6 @@ class Economy(commands.Cog):
     def update_stocks(self):
         while True:
             economy_tools.coins_manager.update()
-
-
-    # @tasks.loop(seconds=30)
-    # async def update_stocks(self):
-    #     economy_tools.coins_manager.update()
-
 
     @nextcord.slash_command(name="매수", description="원하는 코인을 구매합니다")
     async def buy(self, interaction: Interaction,
