@@ -41,6 +41,7 @@ class PieBot(commands.Bot):
 
     def load_commands(self):
         for command_path in _commands:
+            print(f" |  {command_path} 등록중...")
             # 혹시 익스텐션 로드 하는데 에러났니? _command.py 파일에 콤마 잘 넣었는지 봐봐
             self.load_extension(f"commands.{command_path}")
 
