@@ -1,7 +1,7 @@
 import os
 
 def get_data_folder(path: str):
-    dataPathExist = False
+    data_path_exist = False
 
     if not( os.path.exists('data') and os.path.isdir('data') ):
         os.mkdir('data')
