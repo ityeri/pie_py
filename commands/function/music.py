@@ -4,7 +4,6 @@ import os
 import time
 
 import nextcord
-from Tools.scripts.generate_opcode_h import footer
 from nextcord import SlashOption, Embed
 from nextcord.ext import commands
 
