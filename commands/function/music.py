@@ -4,6 +4,7 @@ import os
 import time
 
 import nextcord
+from Tools.scripts.generate_opcode_h import footer
 from nextcord import SlashOption, Embed
 from nextcord.ext import commands
 
@@ -13,18 +14,17 @@ from pytubefix import YouTube, Search
 
 # import pytube
 # import pytube.exceptions
-# from pytube import YouTube, Search
 
-from common_module.embed_message import send_error_embed
+from common_module.embed_message import send_error_embed, Color
 from common_module.exceptions import *
-from common_module.music_utils import PlaylistManager, download_video_timeout, YoutubeAudioFile, PlayMode, stop_callback
+from commands.function.music_tools import PlaylistManager, download_video_timeout, YoutubeAudioFile, PlayMode, stop_callback
 
 
 class Music(commands.Cog):
     def __init__(self, bot):
         self.bot: commands.Bot = bot
 
-        self.playlist_manager: PlaylistManager = PlaylistManager()
+        self.playlist_manager: PlaylistManager = PlaylistManager(self.bot)
 
         # musics 폴더에 남은 임시 파일 삭제
         for filePath in glob.glob("musics/*.m4a"):
@@ -145,7 +145,7 @@ class Music(commands.Cog):
 
         embed = Embed(title=f'검색된 영상 \n```{yt.title}``` \n영상을 플레이 리스트에 추가했습니다!', description=f'길이: {yt.length//60}분 {yt.length%60}초')
         embed.set_image(yt.thumbnail_url)
-        embed.color = 0x9cdcfe
+        embed.color = Color.SKY
 
         await interaction.followup.send(embed=embed)
 
@@ -232,16 +232,26 @@ class Music(commands.Cog):
 
         manager = self.playlist_manager.get_playlist_manager(interaction.guild)
 
+        embed = Embed(
+            title="현재 재생 목록",
+            description=f"현재 {manager.audio_index + 1}번째 음악이 재생중입니다",
+            color=Color.SKY
+        )
+        embed.set_footer(text=f"현재 {len(manager.audio_files)}개의 음악이 재생목록에 있습니다")
 
-        message = '## 현재 플레이 리스트: \n'
 
-        for i, audioFile in enumerate(manager.playlist_audio_files):
-            message += f'{i+1}. `{audioFile.yt.title}`  |  길이: *{audioFile.yt.length//60}분 {audioFile.yt.length%60}초*'
-            if i == manager.audio_index: message += "  |  🔊 현재 재생중!"
+        for i, audio_file in enumerate(manager.audio_files):
+            field_name = f'`{i+1}` : {audio_file.yt.title}'
+            if i == manager.audio_index: field_name += "\n> 🔊 현재 재생중!"
 
-            message += '\n'
+            embed.add_field(
+                name=field_name,
+                value=f"> 길이: *{audio_file.yt.length//60}분 {audio_file.yt.length%60}초*"
+                      f"\n\u180e\u2800\u3164",
+                inline=False
+            )
 
-        await interaction.send(message)
+        await interaction.send(embed=embed)
 
 
 
