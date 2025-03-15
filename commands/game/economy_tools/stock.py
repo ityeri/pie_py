@@ -1,5 +1,9 @@
+import time
 from abc import abstractmethod
+
 import ccxt
+
+from .price_history import PriceHistory
 
 if __name__ == "__main__":
     while True:
@@ -14,6 +18,14 @@ class Stock:
         self.symbol: str = symbol
         self.name = name
 
+        self.last_price: float = None
+        self.last_update_time_sec: float = None
+
+        # 최대 이전 1주일치 까지의 데이터를 저장하고, 60초 즉, 1분 단위로 기록함
+        self.price_history: PriceHistory = PriceHistory(60, 604800)
+
+        self.update()
+
     def __eq__(self, other):
         if isinstance(other, Stock):
             return other.symbol == self.symbol
@@ -21,13 +33,39 @@ class Stock:
 
     def __hash__(self): return hash(self.symbol)
 
-    def get_krw(self, amount: float=1, time_ago_min: int=0) -> float:
-        if time_ago_min == 0:
-            return exchange.fetch_ticker(self.symbol + '/KRW')['last'] * amount
-        else:
-            current_time = exchange.milliseconds()
-            target_time = current_time - time_ago_min * 60 * 1000
+    def update(self):
+        self.last_update_time_sec = time.time()
 
-            # 해당 시간의 종가 가져옴
-            # timeframe 의 '1m' 은 1분 단위씩 데이터를 가져온다는 의미
-            return exchange.fetch_ohlcv(self.symbol + '/KRW', '1m', since=target_time)[0][4]
+        self.last_price = exchange.fetch_ticker(self.symbol + '/KRW')['last']
+        self.price_history.insert_price_to_nearby_time(self.last_update_time_sec, self.last_price)
+
+        self.price_history.check_history_length(self.last_update_time_sec)
+
+
+    def get_krw(self, amount: float=1, time_sec: int=None) -> float:
+        if time_sec is None:
+
+            return self.last_price * amount
+        else:
+            price, actual_time = self.price_history.get_price_from_nearby_time(time_sec)
+
+            if price is None:
+                self.caching_at(time_sec)
+                price = self.price_history.get_price_from_nearby_time(time_sec)[0] * amount
+
+            return price
+
+    def get_bct(self, price_krw: float, time_sec: int=None) -> float:
+        price = self.get_krw(time_sec=time_sec)
+
+        return price_krw / price
+
+
+
+
+    def caching_at(self, time_sec: int):
+        price_data = exchange.fetch_ohlcv(self.symbol + '/KRW', '1m', since=int((time_sec - 60) * 1000))
+
+        for price_time_milly, _, _, _, close_price, _ in price_data:
+            price_time_sec = price_time_milly / 1000
+            self.price_history.insert_price_to_nearby_time(price_time_sec, close_price)
