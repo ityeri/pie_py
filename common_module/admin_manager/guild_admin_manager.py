@@ -1,7 +1,7 @@
 from nextcord import Guild, Role, Member
+from nextcord.ext.commands import Bot
 
-from common_module.exceptions import GuildMismatchError
-from pie_bot import PieBot
+from .exceptions import GuildMismatchError
 
 
 class GuildAdminManager:
@@ -73,8 +73,8 @@ class GuildAdminManager:
         }
 
     @classmethod
-    def from_data(cls, data: dict[str, list[int] | int]) -> "GuildAdminManager":
-        guild_admin_manager = cls(PieBot().get_guild(data["guildId"]))
+    def from_data(cls, data: dict[str, list[int] | int], bot: Bot) -> "GuildAdminManager":
+        guild_admin_manager = cls(bot.get_guild(data["guildId"]))
 
         for user_id in data["admins"]:
             guild_admin_manager.add_admin(guild_admin_manager.guild.get_member(user_id))

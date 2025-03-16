@@ -2,9 +2,9 @@ import glob
 import json
 
 from nextcord import Guild
+from nextcord.ext.commands import Bot
 
 from common_module.path_manager import get_data_folder
-from pie_bot import PieBot
 
 from .guild_admin_manager import GuildAdminManager
 
@@ -43,7 +43,7 @@ class AdminManager:
             with open(f"{save_path}/{guild_id}.json", mode='w') as f:
                 json.dump(guild_admin_manager.to_data(), f, indent=4)
 
-    def load(self, bot: PieBot, path: str):
+    def load(self, bot: Bot, path: str):
 
         files = glob.glob(path + '/*.json')
 
@@ -51,6 +51,6 @@ class AdminManager:
             with open(file, 'r') as f:
                 data = json.load(f)
 
-            guild_admin_manager = GuildAdminManager.from_data(data)
+            guild_admin_manager = GuildAdminManager.from_data(data, bot)
 
             self.guild_admin_managers[guild_admin_manager.guild.id] = guild_admin_manager
