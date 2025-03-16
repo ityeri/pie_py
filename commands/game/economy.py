@@ -134,6 +134,9 @@ class Economy(commands.Cog):
         stock = economy_tools.coins_manager.get_stock_by_name(name)
         bank_book = self.bank_book_manager.get_bank_book(interaction.user)
 
+        if amount is None:
+            amount = bank_book.get_asset(stock).amount
+
         if amount < 0.01:
             await send_error_embed(interaction,
                                    error_title="ToSmallAmountError!!!",
@@ -143,8 +146,7 @@ class Economy(commands.Cog):
                                    )
             return
 
-        if amount is None:
-            amount = bank_book.get_asset(stock).amount
+
 
         is_sell_complete = bank_book.sell(stock, amount)
 
