@@ -4,12 +4,14 @@ from nextcord.ext import commands
 from textwrap import dedent
 
 from common_module.embed_message import send_error_embed, Color, send_complete_embed, send_warn_embed
-from common_module.exceptions import GuildMismatchError
+from common_module.guild_managing_tools import GuildMismatchError
 from main import PieBot
 
 class CommonGuildManaging(commands.Cog):
     def __init__(self, bot):
         self.bot: PieBot = bot
+
+
 
     @nextcord.slash_command(name='관리자목록', description="관리자로 지정된 모든 맴버, 역할을 보여줍니다")
     async def admin_list(self, interaction: nextcord.Interaction):
@@ -75,6 +77,8 @@ class CommonGuildManaging(commands.Cog):
 
         await interaction.send(embed=embed)
 
+
+
     @nextcord.slash_command(name='관리자역할목록', description="관리자로 지정된 역할을 보여줍니다")
     async def admin_role_list(self, interaction: nextcord.Interaction):
 
@@ -134,6 +138,8 @@ class CommonGuildManaging(commands.Cog):
                                   description=f"맴버 `{member_name}`을/를 해당 서버의 관리자로 임명했습니다")
 
         self.bot.admin_manager.save()
+
+
 
     @nextcord.slash_command(name='관리자역할', description=dedent('''
     파이봇의 서버 관리 기능을 사용할수 있는 역할을 지정합니다. 기본적으로 서버장이 이 명령어를 사용할수 있습니다'''))
@@ -204,6 +210,8 @@ class CommonGuildManaging(commands.Cog):
             return
 
         await send_complete_embed(interaction, description=f"맴버 `{member_name}`을/를 탄핵했습니다")
+
+
 
     @nextcord.slash_command(name='관리자역할제거', description=dedent('''
     파이봇의 서버 관리 기능을 사용할수 있는 역할을 지정합니다. 기본적으로 서버장이 이 명령어를 사용할수 있습니다'''))
