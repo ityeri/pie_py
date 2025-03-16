@@ -3,8 +3,10 @@ from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
-if TYPE_CHECKING:
-    from common_module.admin_manager import *
+from common_module.path_manager import get_data_folder
+
+from common_module.admin_manager import *
+
 from _commands import _commands
 
 import os
@@ -59,7 +61,7 @@ class PieBot(commands.Bot):
         print("명령어 동기화 완료!\n")
 
         print("관리자 정보 로드...")
-        self.admin_manager.load()
+        self.admin_manager.load(self, get_data_folder("admins"))
         print("관리자 정보 로딩 완료")
 
         print('\nTimings Reset\n')
