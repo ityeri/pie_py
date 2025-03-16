@@ -15,8 +15,6 @@ class MenuRecommend(commands.Cog):
     def __init__(self, bot):
         self.bot: commands.Bot = bot
 
-        print(os.getcwd())
-
         self.menu_table = MenuTable()
         self.menu_table.load_mtb("menu_table.mtb")
 
@@ -60,7 +58,7 @@ class MenuRecommend(commands.Cog):
         embed = nextcord.Embed(title="", description=f'당신은 지금 당장 \n**{selected_menu.name}** \n을/를 먹어야 한다!', color=0xd7983c)
 
         if selected_menu.menu_img_path is not None:
-            file = nextcord.File(f"menuImgs/{selected_menu.menu_img_path}", filename=f"{selected_menu.menu_img_path}")
+            file = nextcord.File(f"menu_imgs/{selected_menu.menu_img_path}", filename=f"{selected_menu.menu_img_path}")
             embed.set_image(f"attachment://{selected_menu.menu_img_path}")
 
             await interaction.send(embed=embed, file=file)
@@ -82,10 +80,10 @@ class MenuRecommend(commands.Cog):
             return
 
         selected_snack = random.choices(filtered_table.snack_list, k=1)[0]
-        embed = nextcord.Embed(title="", description=f'지금 당장 \n**{selected_snack.name}** \n을/를 먹는게 어떰', color=0xf9aec8)
+        embed = nextcord.Embed(title="", description=f'지금 당장 \n**{selected_snack.name}** \n을/를 드십쇼', color=0xf9aec8)
 
         if selected_snack.img_path is not None:
-            file = nextcord.File(f"menuImgs/{selected_snack.img_path}", filename=f"{selected_snack.img_path}")
+            file = nextcord.File(f"menu_imgs/{selected_snack.img_path}", filename=f"{selected_snack.img_path}")
             embed.set_image(f"attachment://{selected_snack.img_path}")
 
             await interaction.send(embed=embed, file=file)
