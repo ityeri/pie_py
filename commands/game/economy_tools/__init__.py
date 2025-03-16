@@ -5,7 +5,7 @@ from .asset import Asset
 
 from .bank_book_manager import BankBookManager
 
-from .stocks_preset import StockTable, coins
+from .stocks_preset import StocksManager, coins_manager
 
 __all__ = [
     "Stock",
@@ -15,6 +15,6 @@ __all__ = [
 
     "BankBookManager",
 
-    "StockTable",
-    "coins",
+    "StocksManager",
+    "coins_manager",
 ]

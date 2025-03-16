@@ -1,29 +1,97 @@
+import json
+import threading
 import time
-from sys import intern
+from json import JSONDecodeError
 
 import nextcord
-from Tools.scripts.generate_opcode_h import footer
 from nextcord import Interaction, SlashOption, Embed
 from nextcord.ext import commands
+
 from commands.game import economy_tools
+from commands.game.economy_tools import BankBookManager
 from common_module.embed_message import send_complete_embed, send_error_embed, Color
+from common_module.path_manager import get_data_file
 
 
 class Economy(commands.Cog):
     def __init__(self, bot):
         self.bot: commands.Bot = bot
-        self.bank_book_manager = economy_tools.BankBookManager()
 
+        self.bank_book_manager: BankBookManager = None
+
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+
+        path, is_already_exist = get_data_file("bank_books_data.json")
+
+        if is_already_exist:
+            with open(path, "r", encoding="utf-8") as f:
+                try:
+                    data = json.load(f)
+
+                except JSONDecodeError:
+                    print("유저 통장 데이터 로드 실패")
+                    self.bank_book_manager = BankBookManager()
+
+                else:
+                    self.bank_book_manager = (
+                        economy_tools.BankBookManager.from_json(data, self.bot, economy_tools.coins_manager))
+
+        else: self.bank_book_manager = BankBookManager()
+
+        stock_update_thread = threading.Thread(target=self.update_stocks)
+        stock_update_thread.daemon = True
+        stock_update_thread.start()
+
+
+
+    def save_bank_book(self):
+        path, _ = get_data_file("bank_books_data.json")
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(self.bank_book_manager.to_json(), f, indent=4)
+
+
+    def update_stocks(self):
+        while True:
+            economy_tools.coins_manager.update()
+
+            self.save_bank_book()
 
     @nextcord.slash_command(name="매수", description="원하는 코인을 구매합니다")
     async def buy(self, interaction: Interaction,
-                  name: str = SlashOption(name="구매할거", choices=economy_tools.coins.get_names()),
-                  amount: float = SlashOption(name="수량", description="소수점으로도 가능합니다")):
+                  name: str = SlashOption(name="구매할거", choices=economy_tools.coins_manager.get_names()),
+                  amount: float = SlashOption(name="수량", description="소수점으로도 가능합니다.   "
+                                                                      "비워둘시 해당 코인을 최대한 많이 구매합니다",
+                                              required=False)):
 
         await interaction.response.defer()
 
-        stock = economy_tools.coins.get_stock_by_name(name)
+        stock = economy_tools.coins_manager.get_stock_by_name(name)
         bank_book = self.bank_book_manager.get_bank_book(interaction.user)
+
+        if amount is None:
+            amount = stock.get_bct(bank_book.money)
+
+        if bank_book.money < 100:
+            await send_error_embed(interaction,
+                             error_title="ToSmallMoneyError!!!",
+                             description="보유 돈이 100원 미만일시에는 매수가 불가능합니다!",
+                             footer="보유 돈이 100원 이하일시 계산 오차로 인한 문제가 발생할수 있습니다",
+                             followup=True
+            )
+            return
+
+        if amount < 0.01:
+            await send_error_embed(interaction,
+                                   error_title="ToSmallAmountError!!!",
+                                   description="코인은 한번에 최소 0.01개 이상부터 거래가 가능합니다.",
+                                   footer="0.01개 이하의 코인 거래시 계산 오차로 인한 문제가 발생할수 있습니다",
+                                   followup=True
+                                   )
+            return
+
+
 
         is_buy_complete = bank_book.buy(stock, amount)
 
@@ -43,20 +111,42 @@ class Economy(commands.Cog):
                 error_title=f"NotEnoughMoneyError!!!",
                 description=f"내가 가진 돈 `{int(bank_book.money)} 원`이\n"
                             f"필요한 가격인 `{int(stock.get_krw(amount))} 원`보다 부족합니다",
+                footer=f"현재 최대 {format(stock.get_bct(bank_book.money), '.5f')} {stock.symbol} 만큼 구매할수 있습니다\n"
+                       f"수량 입력란을 비워 둘시 해당 코인을 최대한 많이 구매합니다",
                 followup=True
             )
+
+        self.save_bank_book()
+
+
 
 
 
     @nextcord.slash_command(name="매도", description="원하는 코인을 판매합니다")
     async def sell(self, interaction: Interaction,
-                   name: str = SlashOption(name="판매할거", choices=economy_tools.coins.get_names()),
-                   amount: float = SlashOption(name="판매수량", description="소수점으로도 가능합니다")):
+                   name: str = SlashOption(name="판매할거", choices=economy_tools.coins_manager.get_names()),
+                   amount: float = SlashOption(name="판매수량", description="소수점으로도 가능합니다. "
+                                                                        "비워둘시 해당 코인을 모두 매도합니다",
+                                               required=False)):
 
         await interaction.response.defer()
 
-        stock = economy_tools.coins.get_stock_by_name(name)
+        stock = economy_tools.coins_manager.get_stock_by_name(name)
         bank_book = self.bank_book_manager.get_bank_book(interaction.user)
+
+        if amount is None:
+            amount = bank_book.get_asset(stock).amount
+
+        if amount < 0.01:
+            await send_error_embed(interaction,
+                                   error_title="ToSmallAmountError!!!",
+                                   description="코인은 한번에 최소 0.01개 이상부터 거래가 가능합니다.",
+                                   footer="0.01개 이하의 코인 거래시 계산 오차로 인한 문제가 발생할수 있습니다",
+                                   followup=True
+                                   )
+            return
+
+
 
         is_sell_complete = bank_book.sell(stock, amount)
 
@@ -75,8 +165,11 @@ class Economy(commands.Cog):
                 error_title=f"NotCoinEnoughError!!!",
                 description=f"내 보유 코인 `{bank_book.get_asset(stock).amount} {stock.symbol}` 이/가\n"
                             f"판매하는 수량인 `{amount} {stock.symbol}` 보다 부족합니다",
+                footer=f"/매도 명령어의 판매수량 부분을 비워두면, 가지고 있는 해당 코인을 모두 판매할수 있습니다",
                 followup=True
             )
+
+        self.save_bank_book()
 
 
 
@@ -87,19 +180,28 @@ class Economy(commands.Cog):
 
         bank_book = self.bank_book_manager.get_bank_book(interaction.user)
 
-        message = str()
+        embed = Embed(
+            title=f"총 보유 자산: `{bank_book.get_total_money()} 원`",
+            description=f"총 보유 돈: `{bank_book.money} 원` \n\u180e\u2800\u3164",
+            color=Color.SKY
+        )
 
-        message += (f"# 총 보유 자산: {bank_book.get_total_money()} 원\n"
-                    f"## 총 보유 돈: {bank_book.money} 원\n"
-                    f"### 총 보유 코인: {sum([asset.amount for asset in bank_book.assets.values()])}\n")
 
         if len(bank_book.assets) == 0:
-            message += "보유 코인 없음\n"
+            embed.add_field(name="보유 코인 없음\n", value="~~그러니 지금 당장 `/매수` 로 구매합시다~~")
         else:
             for asset in bank_book.assets.values():
-                message += f"{asset.stock.name} : {asset.amount}\n"
+                if 0 < asset.amount:
+                    embed.add_field(
+                        name=f"{asset.stock.name} - {asset.stock.symbol}",
+                        value=f"> `{asset.amount} {asset.stock.symbol}`\n"
+                              f"> 이 코인 모두를 판매할시 `{int(asset.stock.get_krw(asset.amount))}원` 을 얻을수 있습니다\n"
+                              f"\n\u180e\u2800\u3164"
+                    )
 
-        await interaction.send(message)
+        await interaction.followup.send(embed=embed)
+
+        self.save_bank_book()
 
 
 
@@ -112,22 +214,31 @@ class Economy(commands.Cog):
         await interaction.response.defer()
 
         if time_ago_hour is None: time_ago_hour = 2
-        time_ago_min = time_ago_hour * 60
+        if 167 < time_ago_hour:
+            await send_error_embed(interaction,
+                                    error_title="NotAccessibleHistoryError!!!",
+                                    description="최대 1주일(167 시간) 전까지의 가격만 대조해볼수 있습니다",
+                                    followup= True)
+            return
 
-        current_time_sec = int(time.time())
-        old_time_sec = current_time_sec - time_ago_min * 60
+        time_ago_sec = time_ago_hour * 60 * 60
+
+        last_update_time_sec = int(economy_tools.coins_manager.last_update_time)
+        old_time_sec = int(time.time() - time_ago_sec)
 
         embed = Embed(title="현재 코인 시세",
-                      description=f"<t:{current_time_sec}:R> 정보  |  <t:{current_time_sec}:F>"
+                      description=f"마지막 업데이트: <t:{last_update_time_sec}:R>  |  <t:{last_update_time_sec}:F>"
                                   f"\n\u180e\u2800\u3164",
                       color=Color.SKY,
                       )
 
 
 
-        for stock in economy_tools.coins.stocks:
+        for stock in economy_tools.coins_manager.stocks:
+
             current_price = stock.get_krw()
-            old_price = stock.get_krw(time_ago_min=time_ago_min)
+            old_price = stock.get_krw(time_sec=old_time_sec)
+
             price_trend = current_price - old_price
             price_trend_ratio = ((current_price / old_price) - 1) * 100
 
@@ -162,7 +273,7 @@ class Economy(commands.Cog):
                       
                       f"> ```\n"
                       
-                      f"* <t:{current_time_sec}:R> 가격: \n> *{int(current_price)}원*\n"
+                      f"* <t:{last_update_time_sec}:R> 가격: \n> *{int(current_price)}원*\n"
                       f"* <t:{old_time_sec}:R> 가격: \n> *{int(old_price)}원*"
                       f"\n\u180e\u2800\u3164"
             )
@@ -171,7 +282,7 @@ class Economy(commands.Cog):
             embed=embed
         )
 
-        # await interaction.followup.send('\n'.join(display_stock_messages))
+        self.save_bank_book()
 
 
 

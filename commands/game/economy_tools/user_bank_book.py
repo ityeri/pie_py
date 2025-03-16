@@ -1,4 +1,9 @@
+from typing import Any
+
 import nextcord
+from nextcord.ext.commands import Bot
+
+from .stocks_preset import StocksManager
 from .asset import Asset
 from .stock import Stock
 
@@ -44,3 +49,25 @@ class UserBankbook:
             total_money += asset.get_krw()
 
         return total_money
+
+
+
+    @classmethod
+    def from_json(cls, data: dict[str, Any], bot: Bot, stock_manager: StocksManager) -> 'UserBankbook':
+        bank_book = cls(
+            user=bot.get_user(data["userId"]),
+            money=data["money"],
+        )
+
+        for asset_data in data["assets"]:
+            stock = stock_manager.get_stock_by_symbol(asset_data["stockSymbol"])
+            bank_book.assets[stock] = Asset.from_json(asset_data, stock_manager)
+
+        return bank_book
+
+    def to_json(self) -> dict[str, Any]:
+        return {
+            "userId": self.user.id,
+            "money": self.money,
+            "assets": list(map(lambda x: x.to_json(), self.assets.values()))
+        }

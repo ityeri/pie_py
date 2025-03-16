@@ -1,9 +1,20 @@
+import time
+
 from .stock import Stock
 
 
-class StockTable:
+class StocksManager:
     def __init__(self, *stocks: Stock):
         self.stocks: list[Stock] = list(stocks)
+        self.last_update_time: int = None
+
+        self.update()
+
+    def update(self):
+        self.last_update_time = time.time()
+        for stock in self.stocks:
+            stock.update()
+
 
     def get_stock_by_symbol(self, symbol):
         return [stock for stock in self.stocks if stock.symbol == symbol][0]
@@ -19,7 +30,7 @@ class StockTable:
         return list(map(lambda x: x.name, self.stocks))
 
 
-coins = StockTable(
+coins_manager = StocksManager(
     Stock("BTC", "비트코인"),
     Stock("ETH", "이더리움"),
     Stock("DOGE", "도지코인"),
