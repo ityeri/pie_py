@@ -3,7 +3,7 @@ _commands: list[str] = [
     "common.boom",
     "common.pie",
 
-    # "function.menu",
+    "function.menu",
     "function.music",
     "function.random_command",
 
