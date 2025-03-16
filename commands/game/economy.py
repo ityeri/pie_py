@@ -16,10 +16,13 @@ class Economy(commands.Cog):
     def __init__(self, bot):
         self.bot: commands.Bot = bot
 
-        path, is_already_exist = get_data_file("bank_books_data.json")
-        print(path)
+        self.bank_book_manager: BankBookManager = None
 
-        self.bank_book_manager: BankBookManager
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+
+        path, is_already_exist = get_data_file("bank_books_data.json")
 
         if is_already_exist:
             with open(path, "r", encoding="utf-8") as f:
@@ -30,22 +33,10 @@ class Economy(commands.Cog):
 
         else: self.bank_book_manager = BankBookManager()
 
-        # print("코인/주식 시세를 초기 업데이트 합니다")
-        # stocks_count = len(economy_tools.coins_manager.stocks)
-        # for i, stock in enumerate(economy_tools.coins_manager.stocks):
-        #     print(f"{i+1}/{stocks_count} 번째 코인/주식 업데이트 진행중...")
-        #
-        #     stock.update()
-        #     print(f"{i+1}/{stocks_count} 번째 코인/주식 업데이트 완료. 2시간 전 데이터 캐싱 진행...")
-        #
-        #     stock.get_krw(time_sec=time.time() - 3600)
-        #     print(f"{i+1}/{stocks_count} 이전 코인/주식 데이터 캐싱 완료")
-        #
-        #     print(f"{i+1}/{stocks_count} 번째 코인/주식 완료")
-
         stock_update_thread = threading.Thread(target=self.update_stocks)
         stock_update_thread.daemon = True
         stock_update_thread.start()
+
 
 
     def save_bank_book(self):
