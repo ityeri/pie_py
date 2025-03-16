@@ -1,11 +1,10 @@
 import asyncio
-from threading import Thread
 
 import nextcord
-from nextcord import SlashOption, CategoryChannel, VoiceChannel, StageChannel, ForumChannel, TextChannel
+from nextcord import SlashOption, VoiceChannel, StageChannel, ForumChannel, TextChannel
 from nextcord.ext import commands, tasks
 
-from common_module.censor_tools.censor_manager import CensorManager
+from commands.guild_managing.censor_tools.censor_manager import CensorManager
 from common_module.embed_message import send_complete_embed, send_error_embed, send_warn_embed
 from common_module.text_tasker import *
 from pie_bot import PieBot
