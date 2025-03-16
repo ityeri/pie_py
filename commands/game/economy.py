@@ -42,7 +42,7 @@ class Economy(commands.Cog):
     def save_bank_book(self):
         path, _ = get_data_file("bank_books_data.json")
         with open(path, "w", encoding="utf-8") as f:
-            json.dump(self.bank_book_manager.to_json(), f)
+            json.dump(self.bank_book_manager.to_json(), f, indent=4)
 
 
     def update_stocks(self):
