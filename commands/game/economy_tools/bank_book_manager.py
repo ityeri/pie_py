@@ -21,9 +21,12 @@ class BankBookManager:
 
     @classmethod
     def from_json(cls, data: dict[str, dict], bot: Bot, stock_manager: StocksManager) -> 'BankBookManager':
+
         bank_book_manager = BankBookManager()
+
         for user_id, bank_book_data in data.items():
-            bank_book_manager.user_bank_books[bot.get_user(user_id)] = (
+
+            bank_book_manager.user_bank_books[bot.get_user(int(user_id))] = (
                 UserBankbook.from_json(bank_book_data, bot, stock_manager))
 
         return bank_book_manager
