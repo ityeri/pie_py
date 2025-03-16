@@ -1,13 +1,13 @@
-import nextcord
+import copy
+import random
 import time
+
 from nextcord import SlashOption
 from nextcord.ext import commands
-import copy
-import os
-import random
+
+from commands.function.menu_tools import MenuTable, SnackTable, Taste
+
 from common_module.embed_message import *
-from common_module.menu import *
-from common_module.path_manager import get_data_folder
 
 
 class MenuRecommend(commands.Cog):
@@ -67,7 +67,7 @@ class MenuRecommend(commands.Cog):
 
 
     @nextcord.slash_command(name="간식추천", description="조금 출출하다면")
-    async def snack_recommand(self, interaction: nextcord.Interaction,
+    async def snack_recommend(self, interaction: nextcord.Interaction,
                               taste: str = SlashOption(name="맛", description="맛을 골라 주세요",
                                                        choices=["짠맛", "단맛", "삼삼한 맛"], required=False)
                               ):
@@ -81,7 +81,7 @@ class MenuRecommend(commands.Cog):
         selected_snack = random.choices(filtered_table.snack_list, k=1)[0]
         embed = nextcord.Embed(title="", description=f'지금 당장 \n**{selected_snack.name}** \n을/를 먹는게 어떰', color=0xf9aec8)
 
-        if selected_snack.img_path != None:
+        if selected_snack.img_path is not None:
             file = nextcord.File(f"menuImgs/{selected_snack.img_path}", filename=f"{selected_snack.img_path}")
             embed.set_image(f"attachment://{selected_snack.img_path}")
 
