@@ -1,6 +1,7 @@
 import json
 import threading
 import time
+from json import JSONDecodeError
 
 import nextcord
 from nextcord import Interaction, SlashOption, Embed
@@ -26,10 +27,16 @@ class Economy(commands.Cog):
 
         if is_already_exist:
             with open(path, "r", encoding="utf-8") as f:
-                data = json.load(f)
+                try:
+                    data = json.load(f)
 
-            self.bank_book_manager = (
-                economy_tools.BankBookManager.from_json(data, self.bot, economy_tools.coins_manager))
+                except JSONDecodeError:
+                    print("유저 통장 데이터 로드 실패")
+                    self.bank_book_manager = BankBookManager()
+
+                else:
+                    self.bank_book_manager = (
+                        economy_tools.BankBookManager.from_json(data, self.bot, economy_tools.coins_manager))
 
         else: self.bank_book_manager = BankBookManager()
 
