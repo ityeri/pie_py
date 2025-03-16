@@ -4,9 +4,9 @@ from .taste import Taste
 
 
 class Snack:
-    def __init__(self, name: str, taste: int, img_path: str | None):
+    def __init__(self, name: str, taste: Taste, img_path: str | None):
         self.name: str = name
-        self.taste: int = taste
+        self.taste: Taste = taste
         self.img_path: str | None = img_path
 
 
@@ -44,11 +44,11 @@ class SnackTable:
 
     def filter(self,
                name: str = None,
-               taste: int = None) -> 'SnackTable':
+               taste: Taste = None) -> 'SnackTable':
 
         filtered_snack_list = copy.copy(self.snack_list)
 
-        if name != None: filtered_snack_list = [snack for snack in filtered_snack_list if snack.name == name]
-        if taste != None: filtered_snack_list = [snack for snack in filtered_snack_list if snack.taste == taste]
+        if name is not None: filtered_snack_list = [snack for snack in filtered_snack_list if snack.name == name]
+        if taste is not None: filtered_snack_list = [snack for snack in filtered_snack_list if snack.taste == taste]
 
         return SnackTable(filtered_snack_list)

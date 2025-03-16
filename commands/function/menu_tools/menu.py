@@ -1,9 +1,12 @@
+from .taste import Taste
+
+
 class Menu:
-    def __init__(self, name: str, type: str, time: tuple[int, int] | None, taste: int, menu_img_path: str | None):
+    def __init__(self, name: str, type: str, time: tuple[int, int] | None, taste: Taste, menu_img_path: str | None):
         self.name: str = name
         self.type: str = type
         self.time: tuple[int, int] | None = time
-        self.taste: int = taste
+        self.taste: Taste = taste
         self.menu_img_path: str | None = menu_img_path
         # self.score: int = 0
 

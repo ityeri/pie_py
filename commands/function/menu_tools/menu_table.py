@@ -52,13 +52,13 @@ class MenuTable:
                name: str = None,
                type: str = None,
                time: int = None,
-               taste: int = None) -> 'MenuTable':
+               taste: Taste = None) -> 'MenuTable':
 
         filtered_menu_table = copy.copy(self.menu_list)
 
-        if name != None: filtered_menu_table = [menu for menu in self.menu_list if menu.name == name]
-        if type != None: filtered_menu_table = [menu for menu in filtered_menu_table if menu.type == type]
-        if time != None: filtered_menu_table = [menu for menu in filtered_menu_table if menu.is_in_time(time)]
-        if taste != None: filtered_menu_table = [menu for menu in filtered_menu_table if menu.taste == taste]
+        if name is not None: filtered_menu_table = [menu for menu in self.menu_list if menu.name == name]
+        if type is not None: filtered_menu_table = [menu for menu in filtered_menu_table if menu.type == type]
+        if time is not None: filtered_menu_table = [menu for menu in filtered_menu_table if menu.is_in_time(time)]
+        if taste is not None: filtered_menu_table = [menu for menu in filtered_menu_table if menu.taste == taste]
 
         return MenuTable(filtered_menu_table)
