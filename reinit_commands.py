@@ -5,9 +5,6 @@ import sys
 import nextcord
 from nextcord.ext import commands
 
-from pie_bot import PieBot
-from common_module.admin_manager import AdminManager
-
 try:
     from _token import TOKEN
 except ModuleNotFoundError:
