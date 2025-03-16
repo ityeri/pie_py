@@ -1,0 +1,1 @@
+class GuildMismatchError(Exception): pass
