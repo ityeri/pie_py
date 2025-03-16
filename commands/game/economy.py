@@ -7,19 +7,28 @@ from nextcord import Interaction, SlashOption, Embed
 from nextcord.ext import commands
 
 from commands.game import economy_tools
+from commands.game.economy_tools import BankBookManager
 from common_module.embed_message import send_complete_embed, send_error_embed, Color
+from common_module.path_manager import get_data_file
 
 
 class Economy(commands.Cog):
     def __init__(self, bot):
         self.bot: commands.Bot = bot
 
-        with open("bank_books_data.json", "a", encoding="utf-8") as f: ...
-        with open("bank_books_data.json", "r", encoding="utf-8") as f:
-            data = json.load(f)
+        path, is_already_exist = get_data_file("bank_books_data.json")
+        print(path)
 
-        self.bank_book_manager = (
-            economy_tools.BankBookManager.from_json(data, self.bot, economy_tools.coins_manager))
+        self.bank_book_manager: BankBookManager
+
+        if is_already_exist:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            self.bank_book_manager = (
+                economy_tools.BankBookManager.from_json(data, self.bot, economy_tools.coins_manager))
+
+        else: self.bank_book_manager = BankBookManager()
 
         # print("코인/주식 시세를 초기 업데이트 합니다")
         # stocks_count = len(economy_tools.coins_manager.stocks)
@@ -39,9 +48,17 @@ class Economy(commands.Cog):
         stock_update_thread.start()
 
 
+    def save_bank_book(self):
+        path, _ = get_data_file("bank_books_data.json")
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(self.bank_book_manager.to_json(), f)
+
+
     def update_stocks(self):
         while True:
             economy_tools.coins_manager.update()
+
+            self.save_bank_book()
 
     @nextcord.slash_command(name="매수", description="원하는 코인을 구매합니다")
     async def buy(self, interaction: Interaction,
@@ -54,6 +71,9 @@ class Economy(commands.Cog):
 
         stock = economy_tools.coins_manager.get_stock_by_name(name)
         bank_book = self.bank_book_manager.get_bank_book(interaction.user)
+
+        if amount is None:
+            amount = stock.get_bct(bank_book.money)
 
         if bank_book.money < 100:
             await send_error_embed(interaction,
@@ -73,8 +93,7 @@ class Economy(commands.Cog):
                                    )
             return
 
-        if amount is None:
-            amount = stock.get_bct(bank_book.money)
+
 
         is_buy_complete = bank_book.buy(stock, amount)
 
@@ -98,6 +117,10 @@ class Economy(commands.Cog):
                        f"수량 입력란을 비워 둘시 해당 코인을 최대한 많이 구매합니다",
                 followup=True
             )
+
+        self.save_bank_book()
+
+
 
 
 
@@ -146,6 +169,8 @@ class Economy(commands.Cog):
                 followup=True
             )
 
+        self.save_bank_book()
+
 
 
     @nextcord.slash_command(name="자산", description="현재 가진 모든 재산을 확인합니다")
@@ -175,6 +200,8 @@ class Economy(commands.Cog):
                     )
 
         await interaction.followup.send(embed=embed)
+
+        self.save_bank_book()
 
 
 
@@ -255,7 +282,7 @@ class Economy(commands.Cog):
             embed=embed
         )
 
-        # await interaction.followup.send('\n'.join(display_stock_messages))
+        self.save_bank_book()
 
 
 
