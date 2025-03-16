@@ -128,10 +128,9 @@ class AdminManager:
             with open(f"{save_path}/{guild_id}.json", mode='w') as f:
                 json.dump(guild_admin_manager.to_data(), f, indent=4)
 
-    def load(self):
-        load_path = get_data_folder("admins")
+    def load(self, bot: PieBot, path: str):
 
-        files = glob.glob(load_path + '/*.json')
+        files = glob.glob(path + '/*.json')
 
         for file in files:
             with open(file, 'r') as f:
