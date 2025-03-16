@@ -1,4 +1,5 @@
 import copy
+import os
 import random
 import time
 
@@ -14,12 +15,13 @@ class MenuRecommend(commands.Cog):
     def __init__(self, bot):
         self.bot: commands.Bot = bot
 
+        print(os.getcwd())
+
         self.menu_table = MenuTable()
-        try: self.menu_table.load_mtb("menu_table.mtb")
-        except FileNotFoundError: pass
+        self.menu_table.load_mtb("menu_table.mtb")
+
         self.snack_table = SnackTable()
-        try: self.snack_table.load_stb("snack_table.mtb")
-        except FileNotFoundError: pass
+        self.snack_table.load_stb("snack_table.stb")
 
 
     @nextcord.slash_command(name='밥추천', description="밥먹을거 추천받고 싶다면")
@@ -68,11 +70,12 @@ class MenuRecommend(commands.Cog):
 
     @nextcord.slash_command(name="간식추천", description="조금 출출하다면")
     async def snack_recommend(self, interaction: nextcord.Interaction,
-                              taste: str = SlashOption(name="맛", description="맛을 골라 주세요",
-                                                       choices=["짠맛", "단맛", "삼삼한 맛"], required=False)
+                              taste_str: str = SlashOption(name="맛", description="맛을 골라 주세요. "
+                                                                             "고르지 않을시 아무 맛이나 지정됩니다.",
+                                                           choices=["짠맛", "단맛", "삼삼한 맛"], required=False)
                               ):
-        
-        filtered_table = self.snack_table.filter(taste=Taste.str_to_taste(taste))
+
+        filtered_table = self.snack_table.filter(taste=Taste.str_to_taste(taste_str))
 
         if len(filtered_table.snack_list) == 0:
             await send_error_embed(interaction, "SnackNotFoundError!!!", "조건에 맞는 간식을 찾을수 없습니다..")
