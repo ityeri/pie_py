@@ -10,7 +10,7 @@ def is_complete_hangul(char: str) -> bool:
         if chosung == '' or jungsung == '': return False
         else: return True
 
-    else: hgtk.exception.NotHangulException
+    else: raise hgtk.exception.NotHangulException
 
 
 def replace_moe(text, oldMoe: str, newMoe: str):
