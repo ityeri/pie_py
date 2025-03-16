@@ -14,9 +14,11 @@ if platform.system() == "Windows":
 
 
 if __name__ == "__main__":
-    pieBot: PieBot = PieBot()
+    pie_bot: PieBot = PieBot()
 
-    pieBot.set_admin_manager(AdminManager())
+    pie_bot.init_folder()
+
+    pie_bot.set_admin_manager(AdminManager())
 
     print("\n봇을 키는중...")
-    pieBot.start_bot(TOKEN)
+    pie_bot.start_bot(TOKEN)
