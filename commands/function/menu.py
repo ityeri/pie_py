@@ -18,7 +18,7 @@ class MenuRecommend(commands.Cog):
         try: self.menu_table.loadMtb("menu_table.mtb")
         except FileNotFoundError: pass
         self.snack_table = SnackTable()
-        try: self.snack_table.loadStb("menu_table.mtb")
+        try: self.snack_table.loadStb("snack_table.mtb")
         except FileNotFoundError: pass
 
 

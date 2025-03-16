@@ -27,7 +27,7 @@ class SnackTable:
         for record in records:
             if record == '' or record[0] == '#': continue
 
-            attributes = record.split(' ')
+            attributes = record.split(',')
 
             name = attributes[0].lstrip()
             taste = Taste.str_to_taste(attributes[1].lstrip())
