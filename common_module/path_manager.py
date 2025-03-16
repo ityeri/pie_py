@@ -12,10 +12,15 @@ def get_data_folder(path: str):
 
 def get_data_file(file_path: str) -> tuple[str, bool]:
 
-    entire_file_path = f'data/{file_path}'
+    entire_file_path = get_data_folder(os.path.dirname(file_path)) + os.path.basename(file_path)
 
-    if not os.path.exists(entire_file_path) and os.path.isdir(entire_file_path):
+    if not os.path.exists(entire_file_path):
         with open(entire_file_path, 'x'): ...
         return entire_file_path, False
+
+    elif os.path.exists(entire_file_path) and os.path.isdir(entire_file_path):
+        with open(entire_file_path, 'x'): ...
+        return entire_file_path, False
+
     else:
         return entire_file_path, True
