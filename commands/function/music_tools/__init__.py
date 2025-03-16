@@ -2,6 +2,8 @@ from .playlist_manager import PlaylistManager, download_video_timeout
 from .guild_playlist_manager import GuildPlaylistManager, PlayMode, stop_callback
 from .audio_file import YoutubeAudioFile
 
+from .exceptions import *
+
 
 
 __all__ = [
@@ -12,5 +14,9 @@ __all__ = [
     "PlayMode",
     "stop_callback",
 
-    "YoutubeAudioFile"
+    "YoutubeAudioFile",
+
+    "UserNotConnectedError",
+    "BotNotConnectedError",
+    "ChannelMismatchError"
 ]
