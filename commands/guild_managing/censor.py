@@ -5,7 +5,8 @@ import nextcord
 from nextcord import SlashOption, CategoryChannel, VoiceChannel, StageChannel, ForumChannel, TextChannel
 from nextcord.ext import commands, tasks
 
-from common_module.censor_keyword_manager import *
+from common_module.censor_tools.censor_manager import CensorManager
+from common_module.embed_message import send_complete_embed, send_error_embed, send_warn_embed
 from common_module.text_tasker import *
 from pie_bot import PieBot
 
@@ -36,7 +37,7 @@ class Censor(commands.Cog):
             message_conversions= {
                 replace_sangjamo,
                 remove_special_char,
-                # filterChosung,
+                # filter_chosung_only,
                 filter_hangul_only,
                 filter_complete_hangul_only,
                 to_lower_case,
