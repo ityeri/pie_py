@@ -9,7 +9,7 @@ class MenuTable:
     def __init__(self, menu_list: list[Menu] | None = None):
         self.menu_list: list[Menu] = menu_list if menu_list != None else list()
 
-    def loadMtb(self, file_path: str):
+    def load_mtb(self, file_path: str):
         with open(file_path, "r", encoding="utf-8") as f:
             raw_mtb = f.read()
 

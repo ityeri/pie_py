@@ -20,7 +20,7 @@ class SnackTable:
         else:
             self.snack_list = list()
 
-    def loadStb(self, file_path: str):
+    def load_stb(self, file_path: str):
         with open(file_path, "r", encoding='utf-8') as f:
             records = f.read().split('\n')
 
