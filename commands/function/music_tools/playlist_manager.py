@@ -86,11 +86,10 @@ async def download_video_timeout(stream: pytubefix.Stream, output_path: str):
         try:
             stream.download(output_path=output_path, filename=filename)
         except Exception as e:
-            print(f"Error during download: {e}")
+            print(f"영상 다운로드중 에러가 발생했습니다: {e}")
 
     try:
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, download_video, stream, *os.path.split(output_path))
     except asyncio.TimeoutError:
         "ㅣㅣㅣㅣㅣㅣㅖㅖㅖㅖㅖㅖㅖㅖㅖㅖㅖㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔ!!!!!!!!!!!!"
-
