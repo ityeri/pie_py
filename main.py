@@ -1,6 +1,8 @@
 import asyncio
 import platform
 
+import nextcord
+
 from pie_bot import PieBot
 from common_module.admin_manager import AdminManager
 
@@ -11,7 +13,8 @@ except ModuleNotFoundError:
 
 if platform.system() == "Windows":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
+elif platform.system() == "Darwin":
+    nextcord.opus.load_opus('path_to_opus_library')
 
 if __name__ == "__main__":
     pie_bot: PieBot = PieBot()
