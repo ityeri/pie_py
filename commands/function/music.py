@@ -25,8 +25,8 @@ class Music(commands.Cog):
         self.playlist_manager: PlaylistManager = PlaylistManager(self.bot)
 
         # musics 폴더에 남은 임시 파일 삭제
-        for filePath in glob.glob("musics/*.m4a"):
-            os.remove(filePath)
+        for file_path in glob.glob("musics/*.m4a"):
+            os.remove(file_path)
 
 
 
@@ -44,7 +44,7 @@ class Music(commands.Cog):
             except:
                 await send_error_embed(interaction, "BadLinkError!!!", "올바른 URL 이나 검색어를 입력해 주세요")
                 return
-        
+
         # 입력이 검색어라면
         else:
             try:
@@ -55,7 +55,7 @@ class Music(commands.Cog):
                 return
 
 
-        
+
         # 사운드 파일이 저장될 경로를 지정하고 
         # 응답 지연 설정후 다운로드 시작
         await interaction.response.defer() # 다운로드엔 시간이 걸릴수 있기에 응답 지연 설정
@@ -77,7 +77,6 @@ class Music(commands.Cog):
         try:
             await asyncio.wait_for(
                 download_video_timeout(stream=stream, output_path=audio_file_path), timeout=10)
-        
         except TimeoutError: # 다운로드 너무 오래 걸리면 막음
             await send_error_embed(interaction, "VideoSettingsError!!!", """해당 영상이 너무 길거나 다운로드가 너무 오래 걸립니다!""",
                                    followup=True)
@@ -96,7 +95,7 @@ class Music(commands.Cog):
 
 
 
-        except BotNotConnectedError: 
+        except BotNotConnectedError:
             if not self.playlist_manager.is_manager_exist(interaction.guild):
                 manager = self.playlist_manager.new_playlist_manager(interaction.guild)
             else: manager = self.playlist_manager.get_playlist_manager(interaction.guild)
@@ -112,11 +111,11 @@ class Music(commands.Cog):
             # 봇이 위치한 음성 채팅방이 비었는지, 비지 않았는지 확인
             if 0 < len([None for memeber in manager.voice_channel.members if not memeber.bot]):
                 await send_error_embed(interaction, "ChannelMismatchError",
-                               "봇과 일치하는 음성 채널에 접속하거나, 봇이 위치한 음성 체널이 모두 빌때까지 기다려 주세요")
+                                       "봇과 일치하는 음성 채널에 접속하거나, 봇이 위치한 음성 체널이 모두 빌때까지 기다려 주세요")
                 return
-            
+
             # 봇이 위치한 채널이 비었다면 이동함
-            else: 
+            else:
                 # manager.play 에서 stopCallback 이 입력되었음을 가정함
                 # = manager.stop 을 할때 disconnect 도 같이 호출됨
                 manager.stop()
@@ -151,6 +150,7 @@ class Music(commands.Cog):
         if manager.is_playing is False:
             manager.play_mode = PlayMode.ONCE
             manager.play(event_loop=asyncio.get_event_loop(), stop_callback=stop_callback)
+
 
 
     @nextcord.slash_command(name="삭제", description="플레이 리스트의 특정 음악을 지웁니다")
