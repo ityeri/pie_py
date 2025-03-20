@@ -1,3 +1,7 @@
+# macOS 관련 이슈
+opus 관련 에러
+https://discord.com/channels/779628109179650098/1351575189581987993
+
 # `import` 이슈
 commands 아래 명령 파일에서 임포트 할땐 메인 파일을 기준으로 임포트 된. 공통 모듈 가져올라믄 common. 찍고 해야함
 
