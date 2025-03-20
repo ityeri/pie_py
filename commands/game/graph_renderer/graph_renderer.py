@@ -1,5 +1,4 @@
-from io import TextIOWrapper
-from typing import Callable
+from typing import Callable, BinaryIO
 from .graph import Graph
 
 import matplotlib.pyplot as plt
@@ -8,11 +7,13 @@ from matplotlib import font_manager
 
 
 class GraphRenderer:
-    def __init__(self, graph_name: str, formater: Callable[[float, int], str], x_label: str, y_label: str, font_file_path: str):
+    def __init__(self, graph_name: str, x_label: str, y_label: str, font_file_path: str,
+        formater: Callable[[float, int], str] | None = None):
+
         self.graph_name: str = graph_name
         self.graphs: list[Graph] = list()
 
-        self.formater: Callable[[float, int], str] = formater
+        self.formater: Callable[[float, int], str] | None = formater
 
         self.x_label: str = x_label
         self.y_label: str = y_label
@@ -26,9 +27,12 @@ class GraphRenderer:
             )
         )
 
+    def add_graphs(self, *graphs: Graph):
+        self.graphs.extend(graphs)
 
 
-    def render(self, fp: TextIOWrapper):
+
+    def render(self, fp: BinaryIO):
         font_prop = font_manager.FontProperties(
             fname=self.font_file_path)
         plt.rcParams['font.family'] = font_prop.get_name()
@@ -43,14 +47,22 @@ class GraphRenderer:
         ax.grid(color=(0.2, 0.2, 0.2))
 
         # X 축의 단위 표시 설정
-        ax.xaxis.set_major_formatter(self.formater)
+        if self.formater:
+            ax.xaxis.set_major_formatter(self.formater)
 
         # 그래프 영역의 윤곽선 불투명도 설정
         for spine in ax.spines.values(): spine.set_alpha(0)
 
         # 그래프 추가
         for graph in self.graphs:
-            plt.plot(graph.graph_data, linestyle='-', color=graph.color, label=graph.name)
+            if graph.graph_x:
+                plt.plot(graph.graph_x, graph.graph_data, linestyle='-',
+                         color=tuple(map(lambda x: x/255, graph.color)),
+                         label=graph.name)
+            else:
+                plt.plot(graph.graph_data, linestyle='-',
+                         color=tuple(map(lambda x: x / 255, graph.color)),
+                         label=graph.name)
 
         # 좌표축 색상 변경
         ax.tick_params(axis='x', labelcolor='white')
@@ -58,8 +70,10 @@ class GraphRenderer:
 
         # 범례 설정
         legend = ax.legend(loc="lower left", labelcolor=(1, 1, 1))
-        # 범례의 뒷배경 불투명도 설정
-        legend.get_frame().set_alpha(0)
+        # 범례의 뒷배경 색상, 불투명도 설정
+        legend.get_frame().set_facecolor((29/255, 30/255, 33/255))
+        legend.get_frame().set_edgecolor((29/255, 30/255, 33/255))
+        legend.get_frame().set_alpha(0.5)
 
         # 그래프 제목, 레이블 설정
         plt.title(self.graph_name, color='white')
@@ -67,5 +81,5 @@ class GraphRenderer:
         plt.ylabel(self.y_label, color='white')
 
         # 이미지 파일로 저장
-        plt.savefig(fp, format='png')
+        plt.savefig(fp, format='png', dpi=300)
         fp.seek(0)
