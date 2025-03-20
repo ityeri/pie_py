@@ -7,10 +7,24 @@ import nextcord
 from nextcord import Interaction, SlashOption, Embed
 from nextcord.ext import commands
 
+from datetime import timedelta
+
 from commands.game import economy_tools
-from commands.game.economy_tools import BankBookManager
+from commands.game.economy_tools import BankBookManager, Stock
+from commands.game.graph_renderer import Graph, GraphRenderer
 from common_module.embed_message import send_complete_embed, send_error_embed, Color
 from common_module.path_manager import get_data_file
+
+
+
+def time_formater(value: float, tick_value: int) -> str:
+    time_delta = timedelta(seconds=value)
+
+    hours, remainder = divmod(time_delta.seconds, 3600)  # 1시간은 3600초
+    minutes, _ = divmod(remainder, 60)
+
+    return f"{hours}:{minutes:02d}"
+
 
 
 class Economy(commands.Cog):
@@ -18,6 +32,10 @@ class Economy(commands.Cog):
         self.bot: commands.Bot = bot
 
         self.bank_book_manager: BankBookManager = None
+
+        self.coins_color_map: dict[Stock, tuple[int, ...]] = {
+
+        }
 
 
     @commands.Cog.listener()
@@ -283,6 +301,76 @@ class Economy(commands.Cog):
         )
 
         self.save_bank_book()
+
+
+
+    @nextcord.slash_command(name="그래프", description="코인 가격의 그래프를 확인합니다")
+    async def check_graph(self, interaction: Interaction,
+                          checking_stock_name: str = SlashOption(
+                              name="코인",
+                              description="확인할 코인의 이름. 비워둘시 모든 코인의 가격을 확인합니다",
+                              choices=economy_tools.coins_manager.get_names(),
+                              required=False
+                          ),
+                          time_ago_hour: int = SlashOption(
+                              name="시간",
+                              description="몇시간 전까지의 가격을 볼지 정합니다. 비워둘시 2시간 전까지의 가격을 봅니다",
+                              required=False
+                          )):
+
+        if not time_ago_hour: time_ago_hour = 2
+
+        time_ago_sec = time_ago_hour * 3600
+
+        last_update_time_sec = int(economy_tools.coins_manager.last_update_time)
+        old_time_sec = int(time.time() - time_ago_sec)
+
+        graphs: list[Graph] = list()
+
+        if not checking_stock_name:
+            for stock in economy_tools.coins_manager.stocks:
+
+                time_map = list()
+                price_map = list()
+
+                current_get_time = old_time_sec
+
+                while current_get_time < last_update_time_sec:
+                    time_map.append(current_get_time)
+                    price_map.append(stock.get_krw(current_get_time))
+
+                    current_get_time += 60
+
+                graphs.append(Graph(
+                    stock.name, (255, 0, 0), price_map, time_map
+                ))
+        else:
+            stock = economy_tools.coins_manager.get_stock_by_name(checking_stock_name)
+
+            time_map = list()
+            price_map = list()
+
+            current_get_time = old_time_sec
+
+            while current_get_time < last_update_time_sec:
+                time_map.append(current_get_time)
+                price_map.append(stock.get_krw(current_get_time))
+
+                current_get_time += 60
+
+            graphs.append(Graph(
+                stock.name, (255, 0, 0), price_map, time_map
+            ))
+
+        renderer = GraphRenderer("시세", "시간", "가격 / KRW",
+                                 "D2Coding-Ver1.3.1-20180524", formater=time_formater)
+
+        with open(f"temp/{str(time.time()).replace('.', '_')}.png", 'wb') as f:
+            renderer.render(f)
+
+
+
+
 
 
 
