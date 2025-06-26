@@ -6,5 +6,8 @@ src/data/
 .idea/
 .venv/
 
+.venv_win
+.venv_osx
+
 # 맥 os 메타데이터 파일
 ._*
