@@ -1,0 +1,7 @@
+SKY: int = 0x75FBFD
+YELLOW: int = 0xF9DA49
+RED: int = 0xD4494C
+
+OK_COLOR: int = SKY
+WARN_COLOR: int = YELLOW
+ERROR_COLOR: int = RED

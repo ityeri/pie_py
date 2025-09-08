@@ -1,16 +1,12 @@
+import asyncio
 import os
-import dotenv
+
 import discord
-from discord.ext import commands
+import dotenv
 import logging
 
 from extensions import extensions
-
-
-log_handler = logging.FileHandler(filename='latest.log', encoding='utf-8', mode='w')
-intents = discord.Intents.default()
-intents.message_content = True
-bot = commands.Bot(command_prefix="/", intents=intents)
+from setup import bot, setup, log_handler, cli_runner
 
 
 @bot.event
@@ -24,6 +20,9 @@ async def on_ready():
     logging.info("Done!")
     logging.info("Timings Reset")
 
+    loop = asyncio.get_running_loop()
+    loop.create_task(cli_runner.run())
+
     logging.info("명령어 동기화중...")
     await bot.tree.sync()
     logging.info("명령어 동기화 완료")
@@ -31,9 +30,10 @@ async def on_ready():
 
 if __name__ == "__main__":
     dotenv.load_dotenv(".env")
-    discord.utils.setup_logging()
 
+    setup()
     logging.info("봇을 시작합니다")
+    logging.info("심심하다야")
 
     bot.run(
         os.getenv("BOT_TOKEN"),
