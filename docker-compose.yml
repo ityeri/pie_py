@@ -1,0 +1,9 @@
+version: "3.9"
+services:
+  pie_py_app:
+    build: .
+    image: pie_py
+    env_file:
+      - .env
+    ports:
+      - "8080:80"
