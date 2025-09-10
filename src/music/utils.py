@@ -1,11 +1,8 @@
-from youtubesearchpython.__future__ import VideosSearch
-
-import asyncio
-
 from discord import Guild
 from discord.abc import GuildChannel
+from youtubesearchpython.__future__ import VideosSearch
 
-from src.music.music import Music
+from .music import Music
 
 
 def get_guild_display_info(guild: Guild) -> str:

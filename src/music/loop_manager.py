@@ -14,12 +14,21 @@ class LoopMode(Enum):
 class MusicLoopManager:
     def __init__(self, initial_mode: LoopMode):
         self._musics: list[Music] = list()
-        self.next_index: int | None = 0
+        self.current_index: int | None = None
+        self.next_index: int | None = None
         self.loop_mode: LoopMode = initial_mode
         self.tried_musics: set[Music] = set()
 
     @property
+    def current_music(self) -> Music | None:
+        try:
+            return self._musics[self.current_index]
+        except IndexError:
+            return None
+
+    @property
     def next_music(self) -> Music | None:
+        if self.next_index is None: return None
         try:
             return self._musics[self.next_index]
         except IndexError:
@@ -38,9 +47,17 @@ class MusicLoopManager:
     def get_music(self, index: int) -> Music:
         if index < 0: raise IndexError()
         return self._musics[index]
+    def get_music_by_id(self, music_id: str) -> Music | None:
+        try:
+            return next(filter(lambda x: x.music_id == music_id, self._musics))
+        except StopIteration:
+            return None
 
 
     def has_next(self) -> bool:
+
+        if self.next_index is None:
+            return False
 
         if self.loop_mode == LoopMode.ONCE_IN_ORDER:
             if self.next_index < len(self._musics):
@@ -63,11 +80,16 @@ class MusicLoopManager:
         return False
 
     def next(self) -> Music:
+        self.current_index = self.next_index
         music = self.next_music
         self.tried_musics.add(music)
+        self.update_next_index()
 
+        return music
+
+    def update_next_index(self):
         if self.loop_mode == LoopMode.ONCE_IN_ORDER:
-            self.next_index += 1
+            self.next_index = self.current_index + 1
 
         elif self.loop_mode == LoopMode.ONCE_IN_RANDOM:
 
@@ -80,7 +102,7 @@ class MusicLoopManager:
                     self.next_index = random.randrange(0, len(self._musics))
 
         elif self.loop_mode == LoopMode.LOOP_IN_ORDER:
-            self.next_index += 1
+            self.next_index = self.current_index + 1
 
             if self.next_index == len(self._musics):
                 self.next_index = 0
@@ -93,17 +115,16 @@ class MusicLoopManager:
             while self.next_music in self.tried_musics:
                 self.next_index = random.randrange(0, len(self._musics))
 
-        return music
 
-
-    def clear_loop(self, initial_index: int=0):
+    def reset_loop(self):
         self.tried_musics.clear()
-        self.next_index = initial_index
 
     def clear_all(self):
-        self.clear_loop()
+        self.reset_loop()
         for music in self.get_all_musics():
             self.rm(music)
+        self.current_index = None
+        self.next_index = None
 
 
     def add(self, music: Music):
