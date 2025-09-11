@@ -20,9 +20,6 @@ async def on_ready():
     logging.info("Done!")
     logging.info("Timings Reset")
 
-    loop = asyncio.get_running_loop()
-    loop.create_task(cli_runner.run())
-
     logging.info("명령어 동기화중...")
     await bot.tree.sync()
     logging.info("명령어 동기화 완료")

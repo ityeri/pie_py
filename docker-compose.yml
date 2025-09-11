@@ -2,8 +2,9 @@ version: "3.9"
 services:
   app:
     build: .
+    image: pie-py-app
     container_name: pie-py-app
     env_file:
       - .env
     ports:
-      - "8080:80"
+      - "8080:8"
