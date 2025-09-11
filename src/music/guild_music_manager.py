@@ -47,7 +47,7 @@ class GuildMusicManager:
         self.is_running: bool = False
         self.voice_client: VoiceClient | None = None
 
-        self.loop_manager: MusicLoopManager = MusicLoopManager(LoopMode.ONCE_IN_ORDER)
+        self._loop_manager: MusicLoopManager = MusicLoopManager(LoopMode.ONCE_IN_ORDER)
 
         self.logger: Logger = logging.getLogger("GuildMusicManager " + get_guild_display_info(self.guild))
 
@@ -67,6 +67,21 @@ class GuildMusicManager:
             return self.voice_client.channel
         else: return None
 
+    @property
+    def current_music(self) -> Music | None:
+        return self._loop_manager.current_music
+
+    @property
+    def current_music_index(self) -> int | None:
+        return self._loop_manager.current_index
+
+    @property
+    def loop_mode(self) -> LoopMode:
+        return self._loop_manager.loop_mode
+
+    def get_all_musics(self) -> list[Music]:
+        return self._loop_manager.get_all_musics()
+
 
     async def start(self, channel: VoiceChannel, start_index: int):
 
@@ -77,9 +92,9 @@ class GuildMusicManager:
             raise RuntimeError("이미 돌아가는중")
 
 
-        self.loop_manager.reset_loop()
-        self.loop_manager.current_index = None
-        self.loop_manager.next_index = start_index
+        self._loop_manager.reset_loop()
+        self._loop_manager.current_index = None
+        self._loop_manager.next_index = start_index
 
         self.voice_client: VoiceClient = await channel.connect()
         self.loop()
@@ -97,12 +112,12 @@ class GuildMusicManager:
 
     def skip_to(self, next_music: Music | None = None) -> Music:
         if next_music is not None:
-            self.loop_manager.next_music = next_music
+            self._loop_manager.next_music = next_music
 
-            if next_music in self.loop_manager.tried_musics:
-                self.loop_manager.tried_musics.remove(next_music)
+            if next_music in self._loop_manager.tried_musics:
+                self._loop_manager.tried_musics.remove(next_music)
 
-        actual_next_music = self.loop_manager.next_music
+        actual_next_music = self._loop_manager.next_music
         self.voice_client.stop() # vc.stop() 은 콜백에 e 로 None 넣어줌 (에러 없)
 
         return actual_next_music
@@ -111,9 +126,9 @@ class GuildMusicManager:
         if not self.is_running:
             raise RuntimeError("is_running 중이 아닙니다")
 
-        self.loop_manager.loop_mode = loop_mode
-        self.loop_manager.reset_loop()
-        self.loop_manager.update_next_index()
+        self._loop_manager.loop_mode = loop_mode
+        self._loop_manager.reset_loop()
+        self._loop_manager.update_next_index()
         self.bot.loop.create_task(
             self.listeners.dispatch_event(GuildManagerEvent.LOOP_MODE_CHANGE, self)
         )
@@ -122,20 +137,20 @@ class GuildMusicManager:
         if self.voice_client:
             await self.voice_client.disconnect()
 
-        for music in self.loop_manager.get_all_musics():
+        for music in self._loop_manager.get_all_musics():
             music.cleanup()
 
 
     def add_music(self, music: Music):
-        self.loop_manager.add(music)
+        self._loop_manager.add(music)
         self.bot.loop.create_task(
             self.listeners.dispatch_event(GuildManagerEvent.PLAYLIST_MODIFY)
         )
 
     def rm_music(self, music: Music):
-        if music == self.loop_manager.current_music:
+        if music == self._loop_manager.current_music:
             raise ValueError("현재 재생에 사용중인 음악은 제거할수 없습니다")
-        self.loop_manager.rm(music)
+        self._loop_manager.rm(music)
         self.bot.loop.create_task(
             self.listeners.dispatch_event(GuildManagerEvent.PLAYLIST_MODIFY)
         )
@@ -152,7 +167,7 @@ class GuildMusicManager:
         await self.listeners.dispatch_event(GuildManagerEvent.END, self, self.stop_reason)
 
         self.voice_client.cleanup()
-        self.loop_manager.clear_all()
+        self._loop_manager.clear_all()
 
         disconnected_channel = self.current_channel
 
@@ -189,7 +204,7 @@ class GuildMusicManager:
         elif not self.voice_client.is_connected(): # vc 가 연결이 끊기면서 다음 콜백이 호출된거 감지용
             return
 
-        elif not self.loop_manager.has_next():
+        elif not self._loop_manager.has_next():
             self.logger.info("Playing will stopping by GuildMusicManager.loop method!")
             self.bot.loop.create_task(self.stop(StopReason.LOOP_END))
             # asyncio.run_coroutine_threadsafe( # 쓰레드 ㅏㅇㄴ전이 뭐임?
@@ -198,7 +213,7 @@ class GuildMusicManager:
             # )
             return
 
-        current_music = self.loop_manager.next()
+        current_music = self._loop_manager.next()
         current_music.ready()
         self.bot.loop.create_task(self.listeners.dispatch_event(GuildManagerEvent.LOOP_SWITCH, self))
         self.voice_client.play(current_music.source, after=self.loop)

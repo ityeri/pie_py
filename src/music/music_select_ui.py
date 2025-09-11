@@ -18,7 +18,7 @@ class MusicSelect(discord.ui.Select):
 
         options = [
             discord.SelectOption(label=music.title, value=music.music_id)
-            for music in self.guild_manager.loop_manager.get_all_musics()
+            for music in self.guild_manager.get_all_musics()
         ]
         super().__init__(
             placeholder="무엇을 재생할지 선택해 주세요",
@@ -28,8 +28,8 @@ class MusicSelect(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         value = self.values[0]
-        previous_music = self.guild_manager.loop_manager.current_music
-        next_music = self.guild_manager.loop_manager.get_music_by_id(value)
+        previous_music = self.guild_manager.current_music
+        next_music = self.guild_manager.get_music_by_id(value)
         res: InteractionResponse = interaction.response
 
         self.guild_manager.skip_to(next_music)
@@ -37,7 +37,7 @@ class MusicSelect(discord.ui.Select):
         if self.display_response:
             if next_music == previous_music:
                 await res.send_message(embed=Embed(
-                    title=f"**{next_music.title}** 을/를 다시 재생합니다", color=theme.OK_COLOR
+                    title=f"\"**{next_music.title}**\" 영상을 다시 재생합니다", color=theme.OK_COLOR
                 ))
             else:
                 await res.send_message(embed=Embed(
