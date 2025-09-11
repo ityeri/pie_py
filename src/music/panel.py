@@ -36,12 +36,11 @@ class PanelView(discord.ui.View):  # TODO 1238114213256237097
         self.add_item(stop_button)
 
     async def on_previous(self, interaction: Interaction):
-        current_music_index = self.guild_manager.loop_manager.get_all_musics() \
-            .index(self.guild_manager.loop_manager.current_music)
+        current_music_index = self.guild_manager.get_all_musics() \
+            .index(self.guild_manager.current_music)
 
         try:
-            previous_music = self.guild_manager.loop_manager \
-                .get_music(current_music_index - 1)
+            previous_music = self.guild_manager.get_all_musics()[current_music_index - 1]
         except IndexError:
             previous_music = None
 
@@ -51,12 +50,11 @@ class PanelView(discord.ui.View):  # TODO 1238114213256237097
         await res.defer(ephemeral=True)
 
     async def on_next(self, interaction: Interaction):
-        current_music_index = self.guild_manager.loop_manager.get_all_musics() \
-            .index(self.guild_manager.loop_manager.current_music)
+        current_music_index = self.guild_manager.get_all_musics() \
+            .index(self.guild_manager.current_music)
 
         try:
-            previous_music = self.guild_manager.loop_manager \
-                .get_music(current_music_index + 1)
+            previous_music = self.guild_manager.get_all_musics()[current_music_index + 1]
         except IndexError:
             previous_music = None
 
@@ -87,7 +85,7 @@ class Panel:
 
 
     async def update(self):
-        current_music = self.guild_manager.loop_manager.current_music
+        current_music = self.guild_manager.current_music
         embed = discord.Embed(
             title=f"현재 재생중:",
             description=current_music.title,
@@ -96,8 +94,8 @@ class Panel:
         )
         embed.set_image(url=current_music.title_image_url)
         embed.add_field(name="길이", value=parse_time(current_music.length))
-        embed.add_field(name="순번", value=self.guild_manager.loop_manager.current_index + 1)
-        embed.add_field(name="현재 반복 모드", value=self.guild_manager.loop_manager.loop_mode)
+        embed.add_field(name="순번", value=self.guild_manager.current_music_index + 1)
+        embed.add_field(name="현재 반복 모드", value=self.guild_manager.loop_mode)
 
         view = PanelView(self.guild_manager, self.message)
 

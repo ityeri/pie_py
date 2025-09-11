@@ -139,13 +139,12 @@ class MusicExtension(commands.Cog):
 
         music = Music("yt_" + yt.video_id, yt.title, yt.watch_url, yt.thumbnail_url, yt.length, file_path)
 
-        if music.music_id in guild_manager.loop_manager.get_all_music_ids():
+        if music.music_id in [m.music_id for m in guild_manager.get_all_musics()]:
             await send_error_embed(
                 ctx, "DuplicateError",
                 "해당 영상은 중복됩니다",
                 footer="/목록 명령으로 재생목록에 올라가 있는 영상들을 확인할수 있습니다"
             )
-
             return
 
         guild_manager.add_music(music)
@@ -202,12 +201,12 @@ class MusicExtension(commands.Cog):
             return
 
         music = query_music_naturally(
-            guild_manager.loop_manager.get_all_musics(),
+            guild_manager.get_all_musics(),
             flags.title_or_index
         )
 
         if music is not None:
-            if music == guild_manager.loop_manager.current_music:
+            if music == guild_manager.current_music:
                 await send_error_embed(
                     ctx, "ElementError",
                     "현재 재생중인 영상은 제거할수 없습니다"
@@ -216,7 +215,7 @@ class MusicExtension(commands.Cog):
 
             guild_manager.rm_music(music)
             await ctx.send(embed=Embed(
-                title=f"**{music.title}** 을/를 제거했습니다", color=theme.OK_COLOR
+                title=f"\"**{music.title}**\" 영상을 제거했습니다", color=theme.OK_COLOR
             ))
         else:
             await send_error_embed(
@@ -232,12 +231,12 @@ class MusicExtension(commands.Cog):
         if guild_manager is None:
             return
 
-        previous_music = guild_manager.loop_manager.current_music
+        previous_music = guild_manager.current_music
         target_music: Music | None = None
 
         if flags.title_or_index is not None:
             target_music = query_music_naturally(
-                guild_manager.loop_manager.get_all_musics(),
+                guild_manager.get_all_musics(),
                 flags.title_or_index
             )
 
@@ -259,11 +258,11 @@ class MusicExtension(commands.Cog):
         if played_music is not None:
             if played_music == previous_music:
                 await ctx.send(embed=Embed(
-                    title=f"**{played_music.title}** 을/를 다시 재생합니다", color=theme.OK_COLOR
+                    title=f"\"**{played_music.title}**\" 영상을 다시 재생합니다", color=theme.OK_COLOR
                 ))
             else:
                 await ctx.send(embed=Embed(
-                    title=f"**{played_music.title}** (으)로 건너 뛰었습니다", color=theme.OK_COLOR
+                    title=f"\"**{played_music.title}**\" 영상으로 건너 뛰었습니다", color=theme.OK_COLOR
                 ))
 
         else:
@@ -280,16 +279,16 @@ class MusicExtension(commands.Cog):
         if guild_manager is None:
             return
 
-        musics = guild_manager.loop_manager.get_all_musics()
+        musics = guild_manager.get_all_musics()
         embed = Embed(
             title="현재 재생목록",
             description=f"현재 총 {len(musics)}개의 영상이 있습니다",
             color=theme.OK_COLOR
         )
 
-        for i, music in enumerate(guild_manager.loop_manager.get_all_musics()):
+        for i, music in enumerate(guild_manager.get_all_musics()):
             embed.add_field(name=f"{i + 1}. {music.title}", value=parse_time(music.length))
-            if guild_manager.loop_manager.current_music == music:
+            if guild_manager.current_music == music:
                 embed.add_field(name="-", value="🛐 Now Playing!")
             else:
                 embed.add_field(name="", value="")
