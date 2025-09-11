@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 import traceback
 from enum import Enum, auto
-from idlelib.window import add_windows_to_menu
 from logging import Logger
 from typing import Callable, Awaitable
 
