@@ -1,8 +1,8 @@
 version: "3.9"
 services:
-  pie_py_app:
+  app:
     build: .
-    image: pie_py
+    container_name: pie-py-app
     env_file:
       - .env
     ports:
