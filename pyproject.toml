@@ -13,44 +13,28 @@ classifiers = [
 ]
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
-dependencies = [
-    "aioconsole",
-    "aiohappyeyeballs",
-    "aiohttp",
-    "aiosignal",
-    "anyio",
-    "attrs",
-    "certifi",
-    "cffi",
-    "discord",
-    "discord.py",
-    "dotenv",
-    "frozenlist",
-    "h11",
-    "httpcore",
-    "httpx",
-    "multidict",
-    "prompt_toolkit",
-    "propcache",
-    "PyMySQL",
-    "PyNaCl",
-    "python-dotenv",
-    "pytubefix",
-    "sniffio",
-    "SQLAlchemy",
-    "typing_extensions",
-    "wcwidth",
-    "yarl",
-    "youtube-search-python @ git+https://github.com/ityeri/yspy.git"
-]
 
-[project.optional-dependencies]
-test = []
+[tool.poetry]
+name = "pie_py"
+version = "0.0.1"
+description = "파이봇"
+authors = ["ityeri <ityeri9@gmail.com>"]
+packages = [{ include = "pie_py", from = "src" }]
+
+[tool.poetry.dependencies]
+python = ">=3.9"
+aioconsole = "*"
+discord.py = "*"
+dotenv = "*"
+PyMySQL = "*"
+pytubefix = "*"
+SQLAlchemy = "*"
+youtube-search-python = { git = "https://github.com/ityeri/yspy.git" }
 
 [project.urls]
 Homepage = "https://github.com/ityeri/pie_py"
 Issues = "https://github.com/ityeri/pie_py/issues"
 
 [build-system]
-requires = ["setuptools >= 77.0.3"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
