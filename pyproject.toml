@@ -29,7 +29,6 @@ dependencies = [
     "h11",
     "httpcore",
     "httpx",
-    "id",
     "multidict",
     "prompt_toolkit",
     "propcache",
