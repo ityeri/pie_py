@@ -2,8 +2,7 @@ import os
 import dotenv
 import logging
 
-from setup import bot, setup, log_handler
-
+from pie_py.setup import bot, setup, log_handler
 
 if __name__ == "__main__":
     dotenv.load_dotenv(".env")

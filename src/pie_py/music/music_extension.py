@@ -6,8 +6,8 @@ from discord.ext import commands
 from pytubefix import YouTube
 from pytubefix.exceptions import RegexMatchError, VideoUnavailable
 
-from src.utils import theme
-from src.utils.template import send_error_embed
+from pie_py.utils import theme
+from pie_py.utils.template import send_error_embed
 from . import loop_mode_ui
 from .guild_manager_pool import GuildManagerPool
 from .guild_music_manager import StopReason, GuildMusicManager, GuildManagerEvent
@@ -346,3 +346,7 @@ class MusicExtension(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(MusicExtension(bot))
+
+__all__ = [
+    'setup'
+]

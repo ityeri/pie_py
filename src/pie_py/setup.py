@@ -5,9 +5,12 @@ import os
 
 import discord
 from discord.ext import commands
+from sqlalchemy.engine.base import Engine
+from sqlalchemy.engine.create import create_engine
 
+from pie_py import db
 # from pie_py.cli import CLIRunner
-from pie_py.extensions import extensions
+from .extensions import extensions
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -16,7 +19,6 @@ log_handler = logging.FileHandler(filename='latest.log', encoding='utf-8', mode=
 
 # cli_runner: CLIRunner = CLIRunner()
 bot: commands.Bot = commands.Bot(command_prefix="/", intents=intents)
-
 
 @bot.event
 async def on_ready():
@@ -52,7 +54,9 @@ def setup():
         discord.opus.load_opus("/opt/homebrew/lib/libopus.dylib")
         logging.info("Opus loaded.")
 
-    logging.info("Setting up cli_runner")
+    logging.info("Setup db engine...")
+    db.setup()
+    logging.info("Good.")
 
 
 __all__ = [

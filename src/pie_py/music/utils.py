@@ -1,6 +1,7 @@
+from youtubesearchpython.__future__ import VideosSearch
+
 from discord import Guild
 from discord.abc import GuildChannel
-from youtubesearchpython.__future__ import VideosSearch
 
 from .music import Music
 

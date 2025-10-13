@@ -1,7 +1,7 @@
-from .music_extension import setup
+from . import music_extension
 
 __all__ = [
-    "setup"
+    "music_extension"
 ]
 
 # TODO EndEventHandler 같은 엔드 이벤트 뭐시기에서 가능한 이벤트라는 단어 빼두기
