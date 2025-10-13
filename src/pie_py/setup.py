@@ -1,14 +1,14 @@
 import logging
 import shutil
 import sys
-from concurrent.futures.thread import ThreadPoolExecutor
 import os
 
 import discord
 from discord.ext import commands
 
-from src.cli import CLIRunner
-from src.piecli.reload import ReloadCommand
+from pie_py.cli import CLIRunner
+from pie_py.piecli.reload import ReloadCommand
+from pie_py.extensions import extensions
 
 intents = discord.Intents.default()
 intents.message_content = True
