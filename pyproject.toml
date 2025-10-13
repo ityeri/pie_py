@@ -24,12 +24,13 @@ packages = [{ include = "pie_py", from = "src" }]
 [tool.poetry.dependencies]
 python = ">=3.9"
 aioconsole = "*"
-discord.py = "*"
+"discord.py" = "*"
 dotenv = "*"
 PyMySQL = "*"
 pytubefix = "*"
 SQLAlchemy = "*"
 youtube-search-python = { git = "https://github.com/ityeri/yspy.git" }
+prompt-toolkit = "^3.0.52"
 
 [project.urls]
 Homepage = "https://github.com/ityeri/pie_py"
