@@ -3,8 +3,7 @@ from youtubesearchpython.__future__ import VideosSearch
 from discord import Guild
 from discord.abc import GuildChannel
 
-from .music import Music
-
+# 여기서 music.core 참조하면 터짐 core 에서도 music.utils 씀
 
 def get_guild_display_info(guild: Guild) -> str:
     return f'Guild: "{guild.name}" id: {guild.id}'
@@ -43,23 +42,3 @@ def parse_time(
         out = str(hour) + hour_suffix + sep + out
 
     return out
-
-
-def query_music_naturally(musics: list[Music], title_or_index: str) -> Music | None:
-    try:
-        index: int = int(title_or_index) - 1
-
-        if 0 <= index:  # 맞다 파이썬 음수 인덱스도 있었지
-            try:
-                return musics[index]
-            except IndexError:
-                pass
-
-    except ValueError:
-        title: str = title_or_index
-
-        for checking_music in musics:
-            if title in checking_music.title:
-                return checking_music
-
-    return None

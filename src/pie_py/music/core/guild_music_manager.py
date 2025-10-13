@@ -12,7 +12,7 @@ from discord.ext import commands
 from pie_py.async_listener import AsyncListenerManager, AsyncEventEnum
 from .loop_manager import MusicLoopManager, LoopMode
 from .music import Music
-from .utils import get_guild_display_info, get_channel_display_info
+from ..utils import get_guild_display_info, get_channel_display_info
 
 
 class StopReason(Enum):

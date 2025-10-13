@@ -3,7 +3,7 @@ from discord import Embed
 from discord.interactions import InteractionResponse
 
 from pie_py.utils import theme
-from .guild_music_manager import GuildMusicManager
+from ..core.guild_music_manager import GuildMusicManager
 
 
 class MusicSelect(discord.ui.Select):
