@@ -33,7 +33,6 @@ dependencies = [
     "multidict",
     "prompt_toolkit",
     "propcache",
-    "pycpars",
     "PyMySQL",
     "PyNaCl",
     "python-dotenv",
