@@ -1,12 +1,8 @@
-import asyncio
 import os
-
-import discord
 import dotenv
 import logging
 
-from extensions import extensions
-from setup import bot, setup, log_handler, cli_runner
+from setup import bot, setup, log_handler
 
 
 if __name__ == "__main__":
