@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 import traceback
 from enum import Enum, auto
-from idlelib.window import add_windows_to_menu
 from logging import Logger
 from typing import Callable, Awaitable
 
@@ -81,6 +79,9 @@ class GuildMusicManager:
 
     def get_all_musics(self) -> list[Music]:
         return self._loop_manager.get_all_musics()
+
+    def get_music_by_id(self, music_id: str) -> Music | None:
+        return self._loop_manager.get_music_by_id(music_id)
 
 
     async def start(self, channel: VoiceChannel, start_index: int):
