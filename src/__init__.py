@@ -1,7 +1,8 @@
-from . import music, cli, listener
+from . import music, cli, listener, db
 
 __all__ = [
     "cli",
     "music",
-    "listener"
+    "listener",
+    "db"
 ]
