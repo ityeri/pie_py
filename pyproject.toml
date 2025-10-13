@@ -1,0 +1,28 @@
+[project]
+name = "pie_py"
+version = "0.0.1"
+authors = [
+  { name="ityeri", email="ityeri9@gmail.com" },
+]
+description = "파이봇"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+dependencies = [
+]
+
+[project.optional-dependencies]
+test = []
+
+[project.urls]
+Homepage = "https://github.com/ityeri/pie_py"
+Issues = "https://github.com/ityeri/pie_py/issues"
+
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
