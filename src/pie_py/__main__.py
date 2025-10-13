@@ -6,7 +6,7 @@ import dotenv
 import logging
 
 from extensions import extensions
-from pie_py import bot, setup, log_handler, cli_runner
+from setup import bot, setup, log_handler, cli_runner
 
 
 if __name__ == "__main__":

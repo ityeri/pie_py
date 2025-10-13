@@ -14,7 +14,6 @@ intents = discord.Intents.default()
 intents.message_content = True
 
 log_handler = logging.FileHandler(filename='latest.log', encoding='utf-8', mode='w')
-executor = ThreadPoolExecutor(os.cpu_count())
 
 cli_runner: CLIRunner = CLIRunner()
 bot: commands.Bot = commands.Bot(command_prefix="/", intents=intents)
@@ -61,8 +60,7 @@ def setup():
 
 __all__ = [
     "bot",
-    "cli_runner",
+    # "cli_runner",
     "log_handler",
     "setup",
-    "executor"
 ]
