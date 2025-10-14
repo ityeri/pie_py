@@ -1,4 +1,4 @@
-from youtubesearchpython.__future__ import VideosSearch
+from yspy.__future__ import VideosSearch
 
 from discord import Guild
 from discord.abc import GuildChannel
