@@ -1,14 +1,14 @@
 FROM python:3.11-slim
-LABEL authors="it"
 
-WORKDIR "/app"
-COPY . .
+WORKDIR /app
 
 RUN apt update
-
 RUN apt install -y ffmpeg
 RUN apt install -y git && rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir poetry
 
-RUN pip install --no-cache-dir -r requirements.txt
+COPY . ./
+RUN poetry build
+RUN pip install --no-cache-dir dist/*.whl
 
-CMD ["python", "main.py"]
+CMD ["python", "-m", "pie_py"]

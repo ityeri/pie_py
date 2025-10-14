@@ -1,23 +1,39 @@
 import logging
 import shutil
 import sys
-from concurrent.futures.thread import ThreadPoolExecutor
 import os
 
 import discord
 from discord.ext import commands
+from sqlalchemy.engine.base import Engine
+from sqlalchemy.engine.create import create_engine
 
-from src.cli import CLIRunner
-from src.piecli.reload import ReloadCommand
+from pie_py import db
+# from pie_py.cli import CLIRunner
+from .extensions import extensions
 
 intents = discord.Intents.default()
 intents.message_content = True
 
 log_handler = logging.FileHandler(filename='latest.log', encoding='utf-8', mode='w')
-executor = ThreadPoolExecutor(os.cpu_count())
 
-cli_runner: CLIRunner = CLIRunner()
+# cli_runner: CLIRunner = CLIRunner()
 bot: commands.Bot = commands.Bot(command_prefix="/", intents=intents)
+
+@bot.event
+async def on_ready():
+    logging.info(f'"{bot.user}" 로 로그인 완료')
+
+    for ext in extensions:
+        logging.info(f'익스텐션 "{ext}" 등록중')
+        await bot.load_extension(ext)
+
+    logging.info("Done!")
+    logging.info("Timings Reset")
+
+    logging.info("명령어 동기화중...")
+    await bot.tree.sync()
+    logging.info("명령어 동기화 완료")
 
 
 def setup():
@@ -38,15 +54,14 @@ def setup():
         discord.opus.load_opus("/opt/homebrew/lib/libopus.dylib")
         logging.info("Opus loaded.")
 
-    logging.info("Setting up cli_runner")
-
-    cli_runner.add_executor(ReloadCommand(bot))
+    logging.info("Setup db engine...")
+    db.setup()
+    logging.info("Good.")
 
 
 __all__ = [
     "bot",
-    "cli_runner",
+    # "cli_runner",
     "log_handler",
     "setup",
-    "executor"
 ]

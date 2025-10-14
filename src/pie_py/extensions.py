@@ -1,5 +1,5 @@
 extensions = [
-    "src.music.music_extension"
+    "pie_py.music.music_extension"
 ]
 
 

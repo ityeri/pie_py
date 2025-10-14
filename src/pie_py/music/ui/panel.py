@@ -5,12 +5,12 @@ from discord import ButtonStyle
 from discord import Interaction, InteractionResponse
 from discord.ext import commands
 
-from src.utils import theme
-from .guild_music_manager import GuildMusicManager, GuildManagerEvent
-from .guild_music_manager import StopReason
+from pie_py.utils import theme
+from ..core.guild_music_manager import GuildMusicManager, GuildManagerEvent
+from ..core.guild_music_manager import StopReason
 from .loop_mode_ui import LoopModeSelect
 from .music_select_ui import MusicSelect
-from .utils import parse_time
+from ..utils import parse_time
 
 
 class PanelView(discord.ui.View):  # TODO 1238114213256237097
@@ -76,6 +76,8 @@ class Panel:
         self.guild_manager: GuildMusicManager = guild
         self.message: discord.Message = message
         self.panel_delete_handler: PanelDeleteHandler | None = None
+        # 패널 삭제는 guild_manager.listeners 로 감지는 되지만
+        # 상위인 panel_manager 쪽에서 추가로 해야하는 작업이 있기에 panel_manager 로 부터 특수하게 받음
 
         self.bot.add_listener(self.on_message_delete)
         self.guild_manager.listeners.add_listener(GuildManagerEvent.END, self.on_play_end)

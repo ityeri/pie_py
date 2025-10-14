@@ -6,14 +6,11 @@ from discord.ext import commands
 from pytubefix import YouTube
 from pytubefix.exceptions import RegexMatchError, VideoUnavailable
 
-from src.utils import theme
-from src.utils.template import send_error_embed
-from . import loop_mode_ui
-from .guild_manager_pool import GuildManagerPool
-from .guild_music_manager import StopReason, GuildMusicManager, GuildManagerEvent
-from .music import Music
-from .panel_manager import PanelManager
-from .utils import get_guild_display_info, get_urls_by_query, parse_time, query_music_naturally
+from pie_py.utils import theme
+from pie_py.utils.template import send_error_embed
+from .ui import PanelManager, LoopModeView
+from .core import GuildManagerPool, GuildMusicManager, GuildManagerEvent, StopReason, Music
+from .utils import get_guild_display_info, get_urls_by_query, parse_time
 from .youtube import download_audio
 
 
@@ -32,6 +29,25 @@ class NextFlags(commands.FlagConverter):
 class RmFlags(commands.FlagConverter):
     title_or_index: str = \
         commands.Flag(name="번호나_제목", description="영상의 번호나 제목 또는 제목의 일부를 입력하세요")
+
+def query_music_naturally(musics: list[Music], title_or_index: str) -> Music | None:
+    try:
+        index: int = int(title_or_index) - 1
+
+        if 0 <= index:  # 맞다 파이썬 음수 인덱스도 있었지
+            try:
+                return musics[index]
+            except IndexError:
+                pass
+
+    except ValueError:
+        title: str = title_or_index
+
+        for checking_music in musics:
+            if title in checking_music.title:
+                return checking_music
+
+    return None
 
 
 class MusicExtension(commands.Cog):
@@ -308,7 +324,7 @@ class MusicExtension(commands.Cog):
 
         await ctx.send(
             embed=Embed(title="재생 방식을 선택해 주세요", color=theme.OK_COLOR),
-            view = loop_mode_ui.LoopModeView(guild_manager, True)
+            view = LoopModeView(guild_manager, True)
         )
 
 
@@ -346,3 +362,7 @@ class MusicExtension(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(MusicExtension(bot))
+
+__all__ = [
+    'setup'
+]

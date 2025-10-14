@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 
-from .guild_music_manager import GuildMusicManager
+from ..core.guild_music_manager import GuildMusicManager
 from .panel import Panel
 
 
