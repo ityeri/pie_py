@@ -2,8 +2,10 @@ import os
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine.base import Engine
+from sqlalchemy.orm import declarative_base
 
 engine: Engine = None
+Base = declarative_base()
 
 def setup():
     global engine
@@ -11,5 +13,6 @@ def setup():
 
 __all__ = [
     "setup",
-    "engine"
+    "engine",
+    "Base"
 ]

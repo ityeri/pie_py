@@ -1,4 +1,4 @@
-from src.cli import CommandExecutor
+from pie_py.cli import CommandExecutor
 from discord.ext import commands
 import logging
 

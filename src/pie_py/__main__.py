@@ -5,7 +5,7 @@ import logging
 from pie_py.setup import bot, setup, log_handler
 
 if __name__ == "__main__":
-    dotenv.load_dotenv(".env")
+    dotenv.load_dotenv()
 
     setup()
     logging.info("봇을 시작합니다")

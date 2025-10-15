@@ -1,3 +1,4 @@
+import importlib
 import logging
 import shutil
 import sys
@@ -5,12 +6,11 @@ import os
 
 import discord
 from discord.ext import commands
-from sqlalchemy.engine.base import Engine
-from sqlalchemy.engine.create import create_engine
 
 from pie_py import db
+from .extensions import preload_modules, extensions
+
 # from pie_py.cli import CLIRunner
-from .extensions import extensions
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -48,15 +48,23 @@ def setup():
     logging.info("Initialized.")
 
     logging.info("Checking opus...")
-
     if sys.platform == "darwin":
         logging.info("darwin platform detected. loading opus")
         discord.opus.load_opus("/opt/homebrew/lib/libopus.dylib")
         logging.info("Opus loaded.")
 
-    logging.info("Setup db engine...")
+    logging.info("Load preload packages...")
+    for module in preload_modules:
+        logging.info(f'Load "{module}"...')
+        importlib.import_module(module)
+        logging.info(f'"{module}" loaded')
+
+    logging.info("Setup database engine...")
     db.setup()
-    logging.info("Good.")
+    logging.info(db.engine)
+    logging.info("Create tables...")
+    db.Base.metadata.create_all(db.engine)
+    logging.info("Database initialized.")
 
 
 __all__ = [
