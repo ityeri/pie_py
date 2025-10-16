@@ -22,7 +22,7 @@ authors = ["ityeri <ityeri9@gmail.com>"]
 packages = [{ include = "pie_py", from = "src" }]
 
 [tool.poetry.dependencies]
-python = ">=3.9"
+python = ">=3.10"
 aioconsole = "*"
 "discord.py" = "*"
 dotenv = "*"
@@ -31,6 +31,7 @@ pytubefix = "*"
 SQLAlchemy = "*"
 yspy = { git = "https://github.com/ityeri/yspy.git" }
 prompt-toolkit = "^3.0.52"
+cryptography = "^46.0.2"
 
 [project.urls]
 Homepage = "https://github.com/ityeri/pie_py"

@@ -12,7 +12,7 @@ from .extensions import preload_modules, extensions
 
 # from pie_py.cli import CLIRunner
 
-intents = discord.Intents.default()
+intents = discord.Intents.all()
 intents.message_content = True
 
 log_handler = logging.FileHandler(filename='latest.log', encoding='utf-8', mode='w')
@@ -61,7 +61,6 @@ def setup():
 
     logging.info("Setup database engine...")
     db_setup()
-    logging.info(get_engine())
     logging.info("Create tables...")
     Base.metadata.create_all(get_engine())
     logging.info("Database initialized.")

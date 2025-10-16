@@ -11,7 +11,11 @@ class CensorshipPolicy(Base):
     content = Column(String(256), nullable=False)
     is_global = Column(Boolean, nullable=False)
 
-    target_members = relationship('CensorshipTargetMember', back_populates='policy')
+    member_policies = relationship(
+        'MemberCensorshipPolicy',
+        back_populates='origin_policy',
+        passive_deletes=True
+    )
 
     __table_args__ = (
         UniqueConstraint('guild_id', 'content', name='uq_policy'),

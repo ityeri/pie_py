@@ -1,6 +1,6 @@
 from .censorship_policy import CensorshipPolicy
-from .censorship_target_member import CensorshipTargetMember
+from .member_censorship_policy import MemberCensorshipPolicy
 
 __all__ = [
-    'CensorshipPolicy', 'CensorshipTargetMember'
+    'CensorshipPolicy', 'MemberCensorshipPolicy'
 ]
