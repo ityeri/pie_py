@@ -6,6 +6,7 @@ from pie_py import cli
 from pie_py import utils
 
 from pie_py import music
+from pie_py import censorship
 
 __all__ = [
     "setup",
@@ -16,4 +17,5 @@ __all__ = [
     "utils",
 
     "music",
+    'censorship'
 ]

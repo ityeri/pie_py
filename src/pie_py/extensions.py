@@ -1,9 +1,10 @@
 preload_modules= [
-    'pie_py.censorship.core.censorship_repository'
+    'pie_py.censorship.core.censorship.models'
 ]
 
 extensions = [
-    "pie_py.music.music_extension"
+    "pie_py.music.music_extension",
+    'pie_py.censorship.censorship_extension'
 ]
 
 

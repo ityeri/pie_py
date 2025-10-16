@@ -1,7 +1,5 @@
-from .censorship_manager import CensorshipManager
-from . import exceptions
+from . import censorship
 
 __all__ = [
-    'CensorshipManager',
-    'exceptions'
+    'censorship'
 ]
