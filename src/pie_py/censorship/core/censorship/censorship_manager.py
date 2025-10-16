@@ -10,10 +10,10 @@ from pie_py.db import get_session_instance
 from sqlalchemy import select, and_
 
 
-class CensorshipManager:
+class CensorshipManager: # TODO async db query
 
     @staticmethod
-    def add_policy(guild: Guild, content: str, is_global: bool):
+    def add_policy(guild: Guild, content: str, is_global: bool = True):
         with get_session_instance() as session:
             new_policy = repo.CensorshipPolicy(guild_id=guild.id, content=content, is_global=is_global)
 
@@ -91,6 +91,7 @@ class CensorshipManager:
             session.delete(member_policy)
             session.commit()
 
+
     @staticmethod
     def get_guild_policies(guild: Guild) -> list[CensorshipPolicy]:
         with get_session_instance() as session:
@@ -116,6 +117,33 @@ class CensorshipManager:
                 )
 
             return polices
+
+    @staticmethod
+    def get_guild_policy(guild: Guild, content: str) -> CensorshipPolicy:
+        with get_session_instance() as session:
+            policy_row = session.scalars(select(repo.CensorshipPolicy).where(
+                and_(
+                    repo.CensorshipPolicy.guild_id == guild.id,
+                    repo.CensorshipPolicy.content == content
+                )
+            )).first()
+
+            if policy_row is None:
+                raise PolicyNotFoundError("해당 길드에 해당 컨텐츠를 검열하는 정책이 없습니다")
+
+            if not policy_row.is_global:
+                member_policies: list[MemberCensorshipPolicy] = policy_row.member_policies
+                target_members = [guild.get_member(member_policy.user_id) for member_policy in member_policies]
+            elif policy_row.is_global:
+                target_members = None
+
+            return CensorshipPolicy(
+                guild=guild,
+                content=policy_row.content,
+                is_global=policy_row.is_global,
+                target_members=target_members
+            )
+
 
     @staticmethod
     def set_global(guild: Guild, content: str, is_global: bool):
