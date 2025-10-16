@@ -1,8 +1,9 @@
 from enum import Enum
 from typing import Literal
 
+from aiohttp.abc import HTTPException
 from discord.ext import commands
-from discord import Member
+from discord import Member, Message
 
 from .core.censorship import CensorshipManager
 from .core.censorship.exceptions import DuplicateError, PolicyNotFoundError
@@ -24,6 +25,36 @@ class TargetFlags(commands.FlagConverter):
 class CensorshipExtension(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot: commands.Bot = bot
+
+    @commands.Cog.listener()
+    async def on_message(self, message: Message):
+        if message.author.bot:
+            return
+
+        if message.guild is not None:
+            guild = message.guild
+
+            for policy in CensorshipManager.get_guild_policies(guild):
+                if policy.is_global:
+                    if policy.content in message.content:
+
+                        while True:
+                            try:
+                                await message.delete()
+                                break
+                            except HTTPException: pass
+                        return
+                else:
+                    if (message.author in policy.target_members
+                            and message.content in policy.content):
+
+                        while True:
+                            try:
+                                await message.delete()
+                                break
+                            except HTTPException: pass
+                        return
+
 
     @commands.hybrid_command(name='검열목록', description='이 서버에서 말하면교수척장분지형당하는거j')
     async def censorship_list(self, ctx: commands.Context):
