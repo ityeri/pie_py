@@ -758,6 +758,17 @@ files = [
 ]
 
 [[package]]
+name = "hgtk"
+version = "0.2.1"
+description = "Toolkit for Hangul composing, decomposing and etc..."
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "hgtk-0.2.1-py2.py3-none-any.whl", hash = "sha256:f3e33dacf6ab2564f6257418b718e2c7a4ae9fffa32e18d6c4f6278b72ba73ee"},
+]
+
+[[package]]
 name = "httpcore"
 version = "1.0.9"
 description = "A minimal low-level HTTP client."
@@ -1205,6 +1216,18 @@ aiohttp = ">=3.12.13"
 nodejs-wheel-binaries = ">=22.20.0"
 
 [[package]]
+name = "six"
+version = "1.17.0"
+description = "Python 2 and 3 compatibility utilities"
+optional = false
+python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
+groups = ["main"]
+files = [
+    {file = "six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274"},
+    {file = "six-1.17.0.tar.gz", hash = "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81"},
+]
+
+[[package]]
 name = "sniffio"
 version = "1.3.1"
 description = "Sniff out which async library your code is running under"
@@ -1506,4 +1529,4 @@ resolved_reference = "8380beb0af41f324e6805c3e3137ac1658dfefee"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10"
-content-hash = "ec82594340ebfad645ed921e7b1978268eef27f81791b96c7ab056b934509fa8"
+content-hash = "a2e1db2ee20e8e74b9afcc4a01e94cc3bfd568eb4e1bd86461134fb1faabe85b"

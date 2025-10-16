@@ -32,6 +32,8 @@ SQLAlchemy = "*"
 yspy = { git = "https://github.com/ityeri/yspy.git" }
 prompt-toolkit = "^3.0.52"
 cryptography = "^46.0.2"
+hgtk = "^0.2.1"
+six = "^1.17.0"
 
 [project.urls]
 Homepage = "https://github.com/ityeri/pie_py"

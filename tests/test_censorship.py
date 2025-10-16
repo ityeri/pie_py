@@ -4,7 +4,7 @@ import os
 import dotenv
 
 from pie_py.setup import bot, setup, log_handler
-from pie_py.censorship.core import CensorshipManager
+from pie_py.censorship.core.censorship import CensorshipManager
 
 guild1 = bot.get_guild(967763148285308938)
 guild2 = bot.get_guild(1052159030212173904)
