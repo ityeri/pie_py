@@ -2,9 +2,9 @@ from discord import Guild, Member
 from discord.ext import commands
 from sqlalchemy.exc import IntegrityError
 
-from . import censorship_repository as repo
+from . import models as repo
 from .censorship_policy import CensorshipPolicy
-from .censorship_repository import MemberCensorshipPolicy
+from .models import MemberCensorshipPolicy
 from .exceptions import PolicyError, DuplicateError, PolicyNotFoundError
 from pie_py.db import get_session_instance
 from sqlalchemy import select, and_
