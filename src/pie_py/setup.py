@@ -6,6 +6,7 @@ import os
 
 import discord
 from discord.ext import commands
+from discord.ext.commands import ExtensionAlreadyLoaded
 
 from pie_py.db import db_setup, get_engine, Base
 from .extensions import preload_modules, extensions
@@ -25,8 +26,12 @@ async def on_ready():
     logging.info(f'"{bot.user}" 로 로그인 완료')
 
     for ext in extensions:
-        logging.info(f'익스텐션 "{ext}" 등록중')
-        await bot.load_extension(ext)
+        logging.info(f'Loading extension: "{ext}"')
+        try:
+            await bot.load_extension(ext)
+            logging.info(f'Done loading extension: {ext}')
+        except ExtensionAlreadyLoaded:
+            logging.warning(f'Extension: "{ext}" is already loaded. ignore.')
 
     logging.info("Done!")
     logging.info("Timings Reset")

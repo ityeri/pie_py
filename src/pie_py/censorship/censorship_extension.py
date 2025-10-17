@@ -7,6 +7,7 @@ from discord import Member, Message
 
 from .core.censorship import CensorshipManager
 from .core.censorship.exceptions import DuplicateError, PolicyNotFoundError
+from .core.text_converter import TextConverter, convert_funcs
 from .target_select_ui import TargetSelectView
 
 
@@ -26,6 +27,31 @@ class CensorshipExtension(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot: commands.Bot = bot
 
+        self.censored_text_converter: TextConverter = TextConverter(
+            [
+                convert_funcs.replace_sangjamo,
+                convert_funcs.remove_special_char,
+                convert_funcs.filter_chosung_only,
+                convert_funcs.filter_hangul_only,
+                convert_funcs.filter_complete_hangul_only,
+                convert_funcs.filter_alphabet_only,
+                convert_funcs.to_lower_case,
+                convert_funcs.remove_space_char
+            ], 4
+        )
+        self.message_converter: TextConverter = TextConverter(
+            [
+                convert_funcs.replace_sangjamo,
+                convert_funcs.remove_special_char,
+                # convert_funcs.filter_chosung_only,
+                convert_funcs.filter_hangul_only,
+                convert_funcs.filter_complete_hangul_only,
+                convert_funcs.filter_alphabet_only, # TODO 확인 함 해봐야 할드t
+                convert_funcs.to_lower_case,
+                convert_funcs.remove_space_char
+            ], 3
+        )
+
     @commands.Cog.listener()
     async def on_message(self, message: Message):
         if message.author.bot:
@@ -36,17 +62,17 @@ class CensorshipExtension(commands.Cog):
 
             for policy in CensorshipManager.get_guild_policies(guild):
                 if policy.is_global:
-                    if policy.content in message.content:
-
+                    if self.is_illegal(message.content, policy.content):
                         while True:
                             try:
                                 await message.delete()
                                 break
                             except HTTPException: pass
                         return
+
                 else:
                     if (message.author in policy.target_members
-                            and message.content in policy.content):
+                            and self.is_illegal(message.content, policy.content)):
 
                         while True:
                             try:
@@ -54,6 +80,17 @@ class CensorshipExtension(commands.Cog):
                                 break
                             except HTTPException: pass
                         return
+
+    def is_illegal(self, text: str, censored_text: str) -> bool:
+        if censored_text in text:
+            return True
+
+        for sub_text in self.message_converter.get_converted_texts(text):
+            for sub_content in self.censored_text_converter.get_converted_texts(censored_text):
+                if sub_text and sub_content and sub_content in sub_text:
+                    return True
+
+        return False
 
 
     @commands.hybrid_command(name='검열목록', description='이 서버에서 말하면교수척장분지형당하는거j')

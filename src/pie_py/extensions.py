@@ -1,4 +1,4 @@
-preload_modules= [
+preload_modules = [
     'pie_py.censorship.core.censorship.models'
 ]
 

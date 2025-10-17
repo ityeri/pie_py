@@ -10,9 +10,14 @@ class TextConverter:
         self.max_conversion_depth: int = max_conversion_depth
 
     def get_converted_texts(self, text: str) -> Iterator[str]:
+        """
+        무조건 처음 한 한목은 원본이 나옴이 보장됨
+        :param text: Input text
+        :return: Iterator that contain converted texts
+        """
         tried_texts = set()
 
-        for depth in range(1, self.max_conversion_depth + 1):
+        for depth in range(self.max_conversion_depth + 1):
             for converted_text in self._get_converted_texts_at_depth(text, depth):
                 if converted_text not in tried_texts:
                     tried_texts.add(converted_text)
