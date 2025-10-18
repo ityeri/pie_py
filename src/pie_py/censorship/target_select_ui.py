@@ -50,24 +50,30 @@ class TargetSelect(discord.ui.Select):
         try:
             if target == LabeledTarget.ALL:
                 await CensorshipManager.set_global(self.guild, self.content, True)
-                await res.send_message(embed=Embed(
-                    description=f'이제 서버 전부가 `{self.content}` 단어를 사용하지 못합니다',
-                    color=theme.OK_COLOR
-                ))
+                await res.send_message(
+                    embed=Embed(
+                        description=f'이제 서버 전부가 `{self.content}` 단어를 사용하지 못합니다',
+                        color=theme.OK_COLOR
+                    ), ephemeral=True
+                )
 
             elif target ==LabeledTarget.ONLY_CERTAIN_MEMBERS:
                 await CensorshipManager.set_global(self.guild, self.content, False)
-                await res.send_message(embed=Embed(
-                    description=f'이제 일부 멤버는 `{self.content}` 단어를 사용하지 못합니다',
-                    color=theme.OK_COLOR
-                ))
+                await res.send_message(
+                    embed=Embed(
+                        description=f'이제 일부 멤버는 `{self.content}` 단어를 사용하지 못합니다',
+                        color=theme.OK_COLOR
+                    ), ephemeral=True
+                )
 
         except PolicyNotFoundError:
-            await res.send_message(embed=Embed(
-                title='PolicyNotFoundError',
-                description='이 선택창이 띄워진 사이에 해당 검열 정책이 삭제되었습니다',
-                color = theme.ERROR_COLOR
-            ))
+            await res.send_message(
+                embed=Embed(
+                    title='PolicyNotFoundError',
+                    description='이 선택창이 띄워진 사이에 해당 검열 정책이 삭제되었습니다',
+                    color=theme.ERROR_COLOR
+                ), ephemeral=True
+            )
 
 
 class TargetSelectView(discord.ui.View):

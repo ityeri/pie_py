@@ -293,7 +293,7 @@ class CensorshipExtension(commands.Cog):
     @commands.has_permissions(manage_guild=True) # 슬래시 커맨드용 퍼미션 검사
     async def target(self, ctx: commands.Context, *, flags: TargetFlags):
         try:
-            await CensorshipManager.get_guild_policy(ctx.guild, flags.content)
+            policy = await CensorshipManager.get_guild_policy(ctx.guild, flags.content)
 
         except PolicyNotFoundError:
             await ctx.send(
@@ -302,11 +302,17 @@ class CensorshipExtension(commands.Cog):
             )
 
         else:
+            embed = Embed(
+                description=f'"{flags.content}" 단어의 검열을 누굴 대상으로 적용할지 선택해 주세요',
+                color=theme.OK_COLOR
+            )
+            if policy.is_global:
+                embed.set_footer(text='원래 설정은 전체 적용입니다')
+            else:
+                embed.set_footer(text='원래 설정은 지정한 일부 멤버만 적용입니다')
+
             await ctx.send(
-                embed=Embed(
-                    description=f'"{flags.content}" 단어의 검열을 누굴 대상으로 적용할지 선택해 주세요',
-                    color=theme.OK_COLOR
-                ),
+                embed=embed,
                 view=TargetSelectView(ctx.guild, flags.content),
                 ephemeral=True
             )
