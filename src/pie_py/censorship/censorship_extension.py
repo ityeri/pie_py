@@ -62,6 +62,8 @@ class CensorshipExtension(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: Message):
+        if not CensorshipManager.is_censorship_enabled(message.guild):
+            return
         if message.author.bot or message.author.guild_permissions.manage_guild:
             return
 
@@ -82,6 +84,8 @@ class CensorshipExtension(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, _: Message, message: Message):
+        if not CensorshipManager.is_censorship_enabled(message.guild):
+            return
         if message.author.bot or message.author.guild_permissions.manage_guild:
             return
 
