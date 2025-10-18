@@ -1,4 +1,4 @@
-from . import censorship
+from . import censorship_manager
 from . import text_converter
 
 __all__ = [

@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+from collections.abc import tuple_iterator
 from enum import Enum
 from typing import Any
 
 import discord.ui
-from discord import Guild, Interaction, InteractionResponse
+from discord import Guild, Interaction, InteractionResponse, Embed
 
-from pie_py.censorship.core.censorship import CensorshipManager
-from pie_py.censorship.core.censorship.exceptions import PolicyNotFoundError
+from pie_py.censorship.core.censorship_manager import CensorshipManager
+from pie_py.censorship.core.censorship_manager.exceptions import PolicyNotFoundError
+from pie_py.utils import theme
+from pie_py.utils.template import send_error_embed
 
 
 class LabeledTarget(Enum):
@@ -36,7 +39,7 @@ class TargetSelect(discord.ui.Select):
         ]
 
         super().__init__(
-            placeholder='검열이 적용될 d대상 선택',
+            placeholder='검열이 적용될 대상 선택',
             min_values=1, max_values=1, options=options
         )
 
@@ -47,13 +50,24 @@ class TargetSelect(discord.ui.Select):
         try:
             if target == LabeledTarget.ALL:
                 CensorshipManager.set_global(self.guild, self.content, True)
-                await res.send_message(f'이제 "{self.content}" 단어는 서버 전인원이 못씁')
+                await res.send_message(embed=Embed(
+                    description=f'이제 서버 전부가 `{self.content}` 단어를 사용하지 못합니다',
+                    color=theme.OK_COLOR
+                ))
+
             elif target ==LabeledTarget.ONLY_CERTAIN_MEMBERS:
                 CensorshipManager.set_global(self.guild, self.content, False)
-                await res.send_message(f'"{self.content}" 에 대한 지정 검열 설정')
+                await res.send_message(embed=Embed(
+                    description=f'이제 일부 맴버는 `{self.content}` 단어를 사용하지 못합니다',
+                    color=theme.OK_COLOR
+                ))
 
         except PolicyNotFoundError:
-            await res.send_message(f'이 메세지 띄워진 사이에 정책이 날라감')
+            await res.send_message(embed=Embed(
+                title='PolicyNotFoundError',
+                description='이 선택창이 띄워진 사이에 해당 검열 정책이 삭제되었습니다',
+                color = theme.ERROR_COLOR
+            ))
 
 
 class TargetSelectView(discord.ui.View):

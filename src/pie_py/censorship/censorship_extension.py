@@ -1,14 +1,15 @@
-from enum import Enum
-from typing import Literal
+import logging
 
 from aiohttp.abc import HTTPException
 from discord.ext import commands
-from discord import Member, Message
+from discord import Member, Message, Embed, NotFound
 
-from .core.censorship import CensorshipManager
-from .core.censorship.exceptions import DuplicateError, PolicyNotFoundError
+from .core.censorship_manager import CensorshipManager, CensorshipPolicy
+from .core.censorship_manager.exceptions import DuplicateError, PolicyNotFoundError
 from .core.text_converter import TextConverter, convert_funcs
 from .target_select_ui import TargetSelectView
+from pie_py.utils import theme
+from ..utils.template import send_error_embed
 
 
 class AddFlags(commands.FlagConverter):
@@ -52,6 +53,7 @@ class CensorshipExtension(commands.Cog):
             ], 3
         )
 
+
     @commands.Cog.listener()
     async def on_message(self, message: Message):
         if message.author.bot:
@@ -63,23 +65,27 @@ class CensorshipExtension(commands.Cog):
             for policy in CensorshipManager.get_guild_policies(guild):
                 if policy.is_global:
                     if self.is_illegal(message.content, policy.content):
-                        while True:
-                            try:
-                                await message.delete()
-                                break
-                            except HTTPException: pass
+                        await self.censor_message(message, policy)
                         return
 
                 else:
                     if (message.author in policy.target_members
                             and self.is_illegal(message.content, policy.content)):
-
-                        while True:
-                            try:
-                                await message.delete()
-                                break
-                            except HTTPException: pass
+                        await self.censor_message(message, policy)
                         return
+
+    async def censor_message(self, message: Message, policy: CensorshipPolicy):
+        logging.info(
+            f'Message id: {message.id}, message content: "{message.content}", will censor by policy: {policy}'
+        )
+        while True:
+            try:
+                await message.delete()
+                break
+            except HTTPException:
+                pass
+            except NotFound:
+                pass
 
     def is_illegal(self, text: str, censored_text: str) -> bool:
         if censored_text in text:
@@ -87,7 +93,16 @@ class CensorshipExtension(commands.Cog):
 
         for sub_text in self.message_converter.get_converted_texts(text):
             for sub_content in self.censored_text_converter.get_converted_texts(censored_text):
-                if sub_text and sub_content and sub_content in sub_text:
+
+                if not sub_text or not sub_content: # sub_text 또는 sub_content 가 빈 문자열이면
+                    continue
+                elif (
+                        not convert_funcs.remove_space_char(sub_text) or
+                        not convert_funcs.remove_space_char(sub_content)
+                ): # sub_text 또는 sub_content 가 공백 문자로만 이뤄져 있으면
+                    continue
+
+                if sub_content in sub_text:
                     return True
 
         return False
@@ -95,18 +110,55 @@ class CensorshipExtension(commands.Cog):
 
     @commands.hybrid_command(name='검열목록', description='이 서버에서 말하면교수척장분지형당하는거j')
     async def censorship_list(self, ctx: commands.Context):
-        policies = CensorshipManager.get_guild_policies(ctx.guild)
+        await self.censorship_list_for_admin(ctx)
+        await self.censorship_list_for_user(ctx)
 
-        message = str()
+    @commands.hybrid_command(name='금지어', description='이 서버에서 말하면교수척장분지형당하는거j') # aliases
+    async def forbidden_words(self, ctx: commands.Context):
+        await self.censorship_list(ctx)
 
-        for policy in policies:
+
+    async def censorship_list_for_admin(self, ctx: commands.Context):
+        embed = Embed(
+            title=f'서버 "{ctx.guild.name}" 의 금지어',
+            description='표기된 단어, 유사한 단어또한 검열됩니다',
+            color=theme.OK_COLOR
+        )
+
+        for policy in CensorshipManager.get_guild_policies(ctx.guild):
+            field_name = f'"||`{policy.content}`||"'
+            field_value = '* **대상:** '
+
             if policy.is_global:
-                message += f'content: "{policy.content}" | targets: 서버의 모두\n'
+                field_value += '이 서버의 모두'
             else:
-                member_names = [str(member) for member in policy.target_members]
-                message += f'content: "{policy.content}" | targets: {", ".join(member_names)}\n' # TODO
+                field_value += ', '.join([f'<@{member.id}>' for member in policy.target_members])
 
-        await ctx.send(message)
+            embed.add_field(name=field_name, value=field_value)
+
+        await ctx.send(embed=embed)
+
+    async def censorship_list_for_user(self, ctx: commands.Context):
+        user_censored_contents: list[str] = list()
+
+        for policy in CensorshipManager.get_guild_policies(ctx.guild):
+            if policy.is_global:
+                user_censored_contents.append(policy.content)
+            else:
+                if ctx.author in policy.target_members:
+                    user_censored_contents.append(policy.content)
+
+        embed = Embed(
+            title=f'서버 "{ctx.guild.name}" 의 금지어',
+            description='표기된 단어, 유사한 단어또한 검열됩니다',
+            color=theme.OK_COLOR
+        )
+
+        for content in user_censored_contents:
+            embed.add_field(name=f'"||`{content}`||"', value='')
+
+        await ctx.send(embed=embed)
+
 
     @commands.hybrid_group(name='검열', description='검열 관리 명령어 모음')
     async def censorship(self, ctx: commands.Context): ...
@@ -117,10 +169,18 @@ class CensorshipExtension(commands.Cog):
         if flags.target_member is None:
             try:
                 CensorshipManager.add_policy(ctx.guild, flags.content, is_global=True)
-                await ctx.send(f'검열 목록에 "{flags.content}" 추가함')
 
             except DuplicateError:
-                await ctx.send('이미 서버에서 그거 검열 리스트로 올라가 있으')
+                await send_error_embed(
+                    ctx, 'DuplicateError',
+                    description='해당 단어가 이미 검열 목록에 있습니다'
+                )
+
+            else:
+                await ctx.send(embed=Embed(
+                    description=f'검열 단어 "**{flags.content}**" 을/를 추가했습니다',
+                    color=theme.OK_COLOR
+                ))
 
 
         elif flags.target_member is not None:
@@ -130,14 +190,28 @@ class CensorshipExtension(commands.Cog):
 
             try:
                 CensorshipManager.add_member_policy(ctx.guild, flags.target_member, flags.content)
-                await ctx.send(f'{flags.target_member} 는 이제 {flags.content} 못말함')
+
             except DuplicateError:
                 policy = CensorshipManager.get_guild_policy(ctx.guild, flags.content)
 
                 if policy.is_global:
-                    await ctx.send("해당 유저에 대한 정책은 이미 있. 근데 단어 자체가 서버 공통 적용이라서 의미 없음 TODO")
+                    await send_error_embed(
+                        ctx, 'DuplicateError',
+                        description='해당 맴버에 대한 동일한 검열 정책이 이미 있습니다',
+                        footer=
+                            '하지만 해당 단어가 서버 전역으로 적용되도록 설정되어 있습니다'
+                            '지정한 맴버에게만 정책을 적용하도록 할려면 `/검열 적용대상 명령어를 사용해 주세요'
+                    )
                 else:
-                    await ctx.send("도데체 뭘 잘못한건진 모르겠는데 해당 유저는 이미 그걸로 검열 처먹음")
+                    await send_error_embed(
+                        ctx, 'DuplicateError',
+                        description='해당 맴버에 대한 동일한 검열 정책이 이미 있습니다'
+                    )
+
+            else:
+                await ctx.send(embed=Embed(
+                    description=f'<@{flags.target_member.id}> 맴버에게 {flags.content} 검열 청책을 추가했습니다'
+                ))
 
 
     @censorship.command(name='빼기')
@@ -145,16 +219,34 @@ class CensorshipExtension(commands.Cog):
         if flags.target_member is None:
             try:
                 CensorshipManager.rm_policy(ctx.guild, flags.content)
-                await ctx.send('검열 없엠')
+
             except PolicyNotFoundError:
-                await ctx.send("이 길드엔 그런 검열단어 없읍")
+                await ctx.send(embed=Embed(
+                    description='검열 목록에 해당 단어가 없습니다',
+                    color=theme.OK_COLOR
+                ))
+
+            else:
+                await ctx.send(embed=Embed(
+                    description='검열 정책을 제거했습니다',
+                    color=theme.OK_COLOR
+                ))
 
         elif flags.target_member is not None:
             try:
                 CensorshipManager.rm_member_policy(ctx.guild, flags.target_member, flags.content)
-                await ctx.send('검열 없엠')
+
             except PolicyNotFoundError:
-                await ctx.send(f'"{flags.target_member}" 에 대해 "{flags.content}" 로 검열 맥이는건 없음')
+                await ctx.send(embed=Embed(
+                    description=f'<@{flags.target_member.id}> 맴버에 대해 해당 단어를 검열하는 정책이 없습니다',
+                    color=theme.OK_COLOR
+                ))
+
+            else:
+                await ctx.send(embed=Embed(
+                    description='검열 정책을 제거했습니다',
+                    color = theme.OK_COLOR
+                ))
 
 
     @censorship.command(name='적용대상')
@@ -162,12 +254,20 @@ class CensorshipExtension(commands.Cog):
         try:
             CensorshipManager.get_guild_policy(ctx.guild, flags.content)
 
+        except PolicyNotFoundError:
+            await send_error_embed(
+                ctx, 'PolicyNotFoundError',
+                '해당 단어는 검열 목록에 없습니다'
+            )
+
+        else:
             await ctx.send(
-                f'Select apply target for content: "{flags.content}"',
+                embed=Embed(
+                    description=f'"{flags.content}" 단어의 검열을 누굴 대상으로 적용할지 선택해 주세요',
+                    color=theme.OK_COLOR
+                ),
                 view=TargetSelectView(ctx.guild, flags.content)
             )
-        except PolicyNotFoundError:
-            await ctx.send('그런 검열 정책은 없는뎁쇼')
 
 
 async def setup(bot: commands.Bot):
