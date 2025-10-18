@@ -44,7 +44,7 @@ class CensorshipManager: # TODO async db query
     @staticmethod
     async def add_member_policy(guild: Guild, target_member: Member, content: str):
         if guild.id != target_member.guild.id:
-            raise ValueError("지정된 맴버가 해당 길드에 속하지 않습니다")
+            raise ValueError("지정된 멤버가 해당 길드에 속하지 않습니다")
 
         async with get_session_instance() as session:
             scalars = await session.scalars(select(repo.CensorshipPolicy).where(
@@ -90,7 +90,7 @@ class CensorshipManager: # TODO async db query
             member_policy = scalars.first()
 
             if member_policy is None:
-                raise PolicyNotFoundError("이 길드에서 입력받은 맴버는 해당 컨텐츠의 검열 대상이 아닙니다")
+                raise PolicyNotFoundError("이 길드에서, 입력받은 멤버는 해당 컨텐츠의 검열 대상이 아닙니다")
 
             await session.delete(member_policy)
             await session.commit()
@@ -108,7 +108,11 @@ class CensorshipManager: # TODO async db query
             for policy_row in policy_rows:
 
                 if not policy_row.is_global:
-                    member_policies: list[MemberCensorshipPolicy] = policy_row.member_policies
+                    member_policies: list[MemberCensorshipPolicy] = list(await session.scalars(
+                        select(repo.MemberCensorshipPolicy).where(
+                            repo.MemberCensorshipPolicy.origin_policy_id == policy_row.id
+                        )
+                    ))
                     target_members = [guild.get_member(member_policy.user_id) for member_policy in member_policies]
                 elif policy_row.is_global:
                     target_members = None
@@ -139,7 +143,11 @@ class CensorshipManager: # TODO async db query
                 raise PolicyNotFoundError("해당 길드에 해당 컨텐츠를 검열하는 정책이 없습니다")
 
             if not policy_row.is_global:
-                member_policies: list[MemberCensorshipPolicy] = policy_row.member_policies
+                member_policies: list[MemberCensorshipPolicy] = list(await session.scalars(
+                    select(repo.MemberCensorshipPolicy).where(
+                        repo.MemberCensorshipPolicy.origin_policy_id == policy_row.id
+                    )
+                ))
                 target_members = [guild.get_member(member_policy.user_id) for member_policy in member_policies]
             elif policy_row.is_global:
                 target_members = None

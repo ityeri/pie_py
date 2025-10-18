@@ -15,7 +15,7 @@ from pie_py.utils.template import send_error_embed
 
 class LabeledTarget(Enum):
     ALL = ('서버의 모든 인원',)
-    ONLY_CERTAIN_MEMBERS = ('지정된 특정 맴버만',)
+    ONLY_CERTAIN_MEMBERS = ('지정된 특정 멤버만',)
 
     def __init__(self, label: str):
         self.label: str = label
@@ -58,7 +58,7 @@ class TargetSelect(discord.ui.Select):
             elif target ==LabeledTarget.ONLY_CERTAIN_MEMBERS:
                 await CensorshipManager.set_global(self.guild, self.content, False)
                 await res.send_message(embed=Embed(
-                    description=f'이제 일부 맴버는 `{self.content}` 단어를 사용하지 못합니다',
+                    description=f'이제 일부 멤버는 `{self.content}` 단어를 사용하지 못합니다',
                     color=theme.OK_COLOR
                 ))
 
