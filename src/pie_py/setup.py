@@ -8,7 +8,7 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import ExtensionAlreadyLoaded
 
-from pie_py.db import db_setup, get_engine, Base
+from pie_py.db import db_setup, get_async_engine, Base, get_engine
 from .extensions import preload_modules, extensions
 
 # from pie_py.cli import CLIRunner
@@ -66,7 +66,7 @@ def setup():
 
     logging.info("Setup database engine...")
     db_setup()
-    logging.info("Create tables...")
+    logging.info("Init database...")
     Base.metadata.create_all(get_engine())
     logging.info("Database initialized.")
 

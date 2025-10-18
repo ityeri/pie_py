@@ -171,6 +171,25 @@ yarl = ">=1.17.0,<2.0"
 speedups = ["Brotli ; platform_python_implementation == \"CPython\"", "aiodns (>=3.3.0)", "brotlicffi ; platform_python_implementation != \"CPython\"", "zstandard ; platform_python_implementation == \"CPython\" and python_version < \"3.14\""]
 
 [[package]]
+name = "aiomysql"
+version = "0.2.0"
+description = "MySQL driver for asyncio."
+optional = false
+python-versions = ">=3.7"
+groups = ["main"]
+files = [
+    {file = "aiomysql-0.2.0-py3-none-any.whl", hash = "sha256:b7c26da0daf23a5ec5e0b133c03d20657276e4eae9b73e040b72787f6f6ade0a"},
+    {file = "aiomysql-0.2.0.tar.gz", hash = "sha256:558b9c26d580d08b8c5fd1be23c5231ce3aeff2dadad989540fee740253deb67"},
+]
+
+[package.dependencies]
+PyMySQL = ">=1.0"
+
+[package.extras]
+rsa = ["PyMySQL[rsa] (>=1.0)"]
+sa = ["sqlalchemy (>=1.3,<1.4)"]
+
+[[package]]
 name = "aiosignal"
 version = "1.4.0"
 description = "aiosignal: a list of registered asynchronous callbacks"
@@ -1529,4 +1548,4 @@ resolved_reference = "8380beb0af41f324e6805c3e3137ac1658dfefee"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10"
-content-hash = "a2e1db2ee20e8e74b9afcc4a01e94cc3bfd568eb4e1bd86461134fb1faabe85b"
+content-hash = "7c95cfc3f0f7f4da98cc6ecd1a4093a987ba135d6d50b49645f661cfd6e1c5c7"

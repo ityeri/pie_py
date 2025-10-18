@@ -34,6 +34,7 @@ prompt-toolkit = "^3.0.52"
 cryptography = "^46.0.2"
 hgtk = "^0.2.1"
 six = "^1.17.0"
+aiomysql = "^0.2.0"
 
 [project.urls]
 Homepage = "https://github.com/ityeri/pie_py"

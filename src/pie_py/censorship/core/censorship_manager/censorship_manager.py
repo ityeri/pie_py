@@ -13,45 +13,47 @@ from sqlalchemy import select, and_
 class CensorshipManager: # TODO async db query
 
     @staticmethod
-    def add_policy(guild: Guild, content: str, is_global: bool = True):
-        with get_session_instance() as session:
+    async def add_policy(guild: Guild, content: str, is_global: bool = True):
+        async with get_session_instance() as session:
             new_policy = repo.CensorshipPolicy(guild_id=guild.id, content=content, is_global=is_global)
 
             try:
                 session.add(new_policy)
-                session.commit()
+                await session.commit()
             except IntegrityError:
                 raise DuplicateError("해당 정책이 이미 있습니다")
 
     @staticmethod
-    def rm_policy(guild: Guild, content: str):
-        with get_session_instance() as session:
-            policy = session.scalars(select(repo.CensorshipPolicy).where(
+    async def rm_policy(guild: Guild, content: str):
+        async with get_session_instance() as session:
+            scalars = await session.scalars(select(repo.CensorshipPolicy).where(
                 and_(
                     repo.CensorshipPolicy.guild_id == guild.id,
                     repo.CensorshipPolicy.content == content
                 )
-            )).first()
+            ))
+            policy = scalars.first()
 
             if policy is None:
                 raise PolicyNotFoundError("해당 길드에 해당 컨텐츠를 검열하는 정책이 없습니다")
 
-            session.delete(policy)
-            session.commit()
+            await session.delete(policy)
+            await session.commit()
 
 
     @staticmethod
-    def add_member_policy(guild: Guild, target_member: Member, content: str):
+    async def add_member_policy(guild: Guild, target_member: Member, content: str):
         if guild.id != target_member.guild.id:
             raise ValueError("지정된 맴버가 해당 길드에 속하지 않습니다")
 
-        with get_session_instance() as session:
-            policy = session.scalars(select(repo.CensorshipPolicy).where(
+        async with get_session_instance() as session:
+            scalars = await session.scalars(select(repo.CensorshipPolicy).where(
                 and_(
                     repo.CensorshipPolicy.guild_id == guild.id,
                     repo.CensorshipPolicy.content == content
                 )
-            )).first()
+            ))
+            policy = scalars.first()
 
             if policy is None:
                 raise PolicyNotFoundError("해당 길드에 해당 컨텐츠를 검열하는 정책이 없습니다")
@@ -61,45 +63,49 @@ class CensorshipManager: # TODO async db query
 
             try:
                 session.add(new_member_policy)
-                session.commit()
+                await session.commit()
             except IntegrityError:
                 raise DuplicateError("해당 유저의 동일한 길드에 대한 동일한 정책이 이미 있습니다")
 
     @staticmethod
-    def rm_member_policy(guild: Guild, target_member: Member, content: str):
-        with get_session_instance() as session:
-            policy = session.scalars(select(repo.CensorshipPolicy).where(
+    async def rm_member_policy(guild: Guild, target_member: Member, content: str):
+        async with get_session_instance() as session:
+            scalars = await session.scalars(select(repo.CensorshipPolicy).where(
                 and_(
                     repo.CensorshipPolicy.guild_id == guild.id,
                     repo.CensorshipPolicy.content == content
                 )
-            )).first()
+            ))
+            policy = scalars.first()
 
             if policy is None:
                 raise PolicyNotFoundError("해당 길드에 해당 컨텐츠를 검열하는 정책이 없습니다")
 
-            member_policy = session.scalars(select(repo.MemberCensorshipPolicy).where(
+            scalars = await session.scalars(select(repo.MemberCensorshipPolicy).where(
                 and_(
                     repo.MemberCensorshipPolicy.user_id == target_member.id,
                     repo.MemberCensorshipPolicy.origin_policy_id == policy.id
                 )
-            )).first()
+            ))
+            member_policy = scalars.first()
 
             if member_policy is None:
                 raise PolicyNotFoundError("이 길드에서 입력받은 맴버는 해당 컨텐츠의 검열 대상이 아닙니다")
 
-            session.delete(member_policy)
-            session.commit()
+            await session.delete(member_policy)
+            await session.commit()
 
 
     @staticmethod
-    def get_guild_policies(guild: Guild) -> list[CensorshipPolicy]:
-        with get_session_instance() as session:
+    async def get_guild_policies(guild: Guild) -> list[CensorshipPolicy]:
+        async with get_session_instance() as session:
             polices: list[CensorshipPolicy] = list()
 
-            for policy_row in \
-                    session.scalars(select(repo.CensorshipPolicy).where(
-                        repo.CensorshipPolicy.guild_id == guild.id)):
+            policy_rows = await session.scalars(select(repo.CensorshipPolicy).where(
+                repo.CensorshipPolicy.guild_id == guild.id
+            ))
+
+            for policy_row in policy_rows:
 
                 if not policy_row.is_global:
                     member_policies: list[MemberCensorshipPolicy] = policy_row.member_policies
@@ -119,14 +125,15 @@ class CensorshipManager: # TODO async db query
             return polices
 
     @staticmethod
-    def get_guild_policy(guild: Guild, content: str) -> CensorshipPolicy:
-        with get_session_instance() as session:
-            policy_row = session.scalars(select(repo.CensorshipPolicy).where(
+    async def get_guild_policy(guild: Guild, content: str) -> CensorshipPolicy:
+        async with get_session_instance() as session:
+            scalars = await session.scalars(select(repo.CensorshipPolicy).where(
                 and_(
                     repo.CensorshipPolicy.guild_id == guild.id,
                     repo.CensorshipPolicy.content == content
                 )
-            )).first()
+            ))
+            policy_row = scalars.first()
 
             if policy_row is None:
                 raise PolicyNotFoundError("해당 길드에 해당 컨텐츠를 검열하는 정책이 없습니다")
@@ -146,17 +153,18 @@ class CensorshipManager: # TODO async db query
 
 
     @staticmethod
-    def set_global(guild: Guild, content: str, is_global: bool):
-        with get_session_instance() as session:
-            policy = session.scalars(select(repo.CensorshipPolicy).where(
+    async def set_global(guild: Guild, content: str, is_global: bool):
+        async with get_session_instance() as session:
+            scalars = await session.scalars(select(repo.CensorshipPolicy).where(
                 and_(
                     repo.CensorshipPolicy.guild_id == guild.id,
                     repo.CensorshipPolicy.content == content
                 )
-            )).first()
+            ))
+            policy = scalars.first()
 
             if policy is None:
                 raise PolicyNotFoundError("해당 길드에 해당 컨텐츠를 검열하는 정책이 없습니다")
 
             policy.is_global = is_global
-            session.commit()
+            await session.commit()

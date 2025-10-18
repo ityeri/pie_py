@@ -49,14 +49,14 @@ class TargetSelect(discord.ui.Select):
 
         try:
             if target == LabeledTarget.ALL:
-                CensorshipManager.set_global(self.guild, self.content, True)
+                await CensorshipManager.set_global(self.guild, self.content, True)
                 await res.send_message(embed=Embed(
                     description=f'이제 서버 전부가 `{self.content}` 단어를 사용하지 못합니다',
                     color=theme.OK_COLOR
                 ))
 
             elif target ==LabeledTarget.ONLY_CERTAIN_MEMBERS:
-                CensorshipManager.set_global(self.guild, self.content, False)
+                await CensorshipManager.set_global(self.guild, self.content, False)
                 await res.send_message(embed=Embed(
                     description=f'이제 일부 맴버는 `{self.content}` 단어를 사용하지 못합니다',
                     color=theme.OK_COLOR

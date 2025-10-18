@@ -62,7 +62,7 @@ class CensorshipExtension(commands.Cog):
         if message.guild is not None:
             guild = message.guild
 
-            for policy in CensorshipManager.get_guild_policies(guild):
+            for policy in await CensorshipManager.get_guild_policies(guild):
                 if policy.is_global:
                     if self.is_illegal(message.content, policy.content):
                         await self.censor_message(message, policy)
@@ -125,7 +125,7 @@ class CensorshipExtension(commands.Cog):
             color=theme.OK_COLOR
         )
 
-        for policy in CensorshipManager.get_guild_policies(ctx.guild):
+        for policy in await CensorshipManager.get_guild_policies(ctx.guild):
             field_name = f'"||`{policy.content}`||"'
             field_value = '* **대상:** '
 
@@ -141,7 +141,7 @@ class CensorshipExtension(commands.Cog):
     async def censorship_list_for_user(self, ctx: commands.Context):
         user_censored_contents: list[str] = list()
 
-        for policy in CensorshipManager.get_guild_policies(ctx.guild):
+        for policy in await CensorshipManager.get_guild_policies(ctx.guild):
             if policy.is_global:
                 user_censored_contents.append(policy.content)
             else:
@@ -168,7 +168,7 @@ class CensorshipExtension(commands.Cog):
     async def add(self, ctx: commands.Context, *, flags: RmFlags):
         if flags.target_member is None:
             try:
-                CensorshipManager.add_policy(ctx.guild, flags.content, is_global=True)
+                await CensorshipManager.add_policy(ctx.guild, flags.content, is_global=True)
 
             except DuplicateError:
                 await send_error_embed(
@@ -185,11 +185,11 @@ class CensorshipExtension(commands.Cog):
 
         elif flags.target_member is not None:
             try:
-                CensorshipManager.add_policy(ctx.guild, flags.content, is_global=False)
+                await CensorshipManager.add_policy(ctx.guild, flags.content, is_global=False)
             except DuplicateError: pass
 
             try:
-                CensorshipManager.add_member_policy(ctx.guild, flags.target_member, flags.content)
+                await CensorshipManager.add_member_policy(ctx.guild, flags.target_member, flags.content)
 
             except DuplicateError:
                 policy = CensorshipManager.get_guild_policy(ctx.guild, flags.content)
@@ -218,7 +218,7 @@ class CensorshipExtension(commands.Cog):
     async def rm(self, ctx: commands.Context, *, flags: RmFlags):
         if flags.target_member is None:
             try:
-                CensorshipManager.rm_policy(ctx.guild, flags.content)
+                await CensorshipManager.rm_policy(ctx.guild, flags.content)
 
             except PolicyNotFoundError:
                 await ctx.send(embed=Embed(
@@ -234,7 +234,7 @@ class CensorshipExtension(commands.Cog):
 
         elif flags.target_member is not None:
             try:
-                CensorshipManager.rm_member_policy(ctx.guild, flags.target_member, flags.content)
+                await CensorshipManager.rm_member_policy(ctx.guild, flags.target_member, flags.content)
 
             except PolicyNotFoundError:
                 await ctx.send(embed=Embed(
@@ -252,7 +252,7 @@ class CensorshipExtension(commands.Cog):
     @censorship.command(name='적용대상')
     async def target(self, ctx: commands.Context, *, flags: TargetFlags):
         try:
-            CensorshipManager.get_guild_policy(ctx.guild, flags.content)
+            await CensorshipManager.get_guild_policy(ctx.guild, flags.content)
 
         except PolicyNotFoundError:
             await send_error_embed(
