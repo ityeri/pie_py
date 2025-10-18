@@ -2,7 +2,7 @@ from discord import Guild, Member
 from discord.ext import commands
 from sqlalchemy.exc import IntegrityError
 
-from . import models as repo
+from . import models
 from .censorship_policy import CensorshipPolicy
 from .models import MemberCensorshipPolicy
 from .exceptions import PolicyError, DuplicateError, PolicyNotFoundError
@@ -15,7 +15,7 @@ class CensorshipManager: # TODO async db query
     @staticmethod
     async def add_policy(guild: Guild, content: str, is_global: bool = True):
         async with get_session_instance() as session:
-            new_policy = repo.CensorshipPolicy(guild_id=guild.id, content=content, is_global=is_global)
+            new_policy = models.CensorshipPolicy(guild_id=guild.id, content=content, is_global=is_global)
 
             try:
                 session.add(new_policy)
@@ -26,10 +26,10 @@ class CensorshipManager: # TODO async db query
     @staticmethod
     async def rm_policy(guild: Guild, content: str):
         async with get_session_instance() as session:
-            scalars = await session.scalars(select(repo.CensorshipPolicy).where(
+            scalars = await session.scalars(select(models.CensorshipPolicy).where(
                 and_(
-                    repo.CensorshipPolicy.guild_id == guild.id,
-                    repo.CensorshipPolicy.content == content
+                    models.CensorshipPolicy.guild_id == guild.id,
+                    models.CensorshipPolicy.content == content
                 )
             ))
             policy = scalars.first()
@@ -47,10 +47,10 @@ class CensorshipManager: # TODO async db query
             raise ValueError("지정된 멤버가 해당 길드에 속하지 않습니다")
 
         async with get_session_instance() as session:
-            scalars = await session.scalars(select(repo.CensorshipPolicy).where(
+            scalars = await session.scalars(select(models.CensorshipPolicy).where(
                 and_(
-                    repo.CensorshipPolicy.guild_id == guild.id,
-                    repo.CensorshipPolicy.content == content
+                    models.CensorshipPolicy.guild_id == guild.id,
+                    models.CensorshipPolicy.content == content
                 )
             ))
             policy = scalars.first()
@@ -58,7 +58,7 @@ class CensorshipManager: # TODO async db query
             if policy is None:
                 raise PolicyNotFoundError("해당 길드에 해당 컨텐츠를 검열하는 정책이 없습니다")
 
-            new_member_policy = repo.MemberCensorshipPolicy(user_id=target_member.id)
+            new_member_policy = models.MemberCensorshipPolicy(user_id=target_member.id)
             new_member_policy.origin_policy = policy
 
             try:
@@ -70,10 +70,10 @@ class CensorshipManager: # TODO async db query
     @staticmethod
     async def rm_member_policy(guild: Guild, target_member: Member, content: str):
         async with get_session_instance() as session:
-            scalars = await session.scalars(select(repo.CensorshipPolicy).where(
+            scalars = await session.scalars(select(models.CensorshipPolicy).where(
                 and_(
-                    repo.CensorshipPolicy.guild_id == guild.id,
-                    repo.CensorshipPolicy.content == content
+                    models.CensorshipPolicy.guild_id == guild.id,
+                    models.CensorshipPolicy.content == content
                 )
             ))
             policy = scalars.first()
@@ -81,10 +81,10 @@ class CensorshipManager: # TODO async db query
             if policy is None:
                 raise PolicyNotFoundError("해당 길드에 해당 컨텐츠를 검열하는 정책이 없습니다")
 
-            scalars = await session.scalars(select(repo.MemberCensorshipPolicy).where(
+            scalars = await session.scalars(select(models.MemberCensorshipPolicy).where(
                 and_(
-                    repo.MemberCensorshipPolicy.user_id == target_member.id,
-                    repo.MemberCensorshipPolicy.origin_policy_id == policy.id
+                    models.MemberCensorshipPolicy.user_id == target_member.id,
+                    models.MemberCensorshipPolicy.origin_policy_id == policy.id
                 )
             ))
             member_policy = scalars.first()
@@ -101,16 +101,16 @@ class CensorshipManager: # TODO async db query
         async with get_session_instance() as session:
             polices: list[CensorshipPolicy] = list()
 
-            policy_rows = await session.scalars(select(repo.CensorshipPolicy).where(
-                repo.CensorshipPolicy.guild_id == guild.id
+            policy_rows = await session.scalars(select(models.CensorshipPolicy).where(
+                models.CensorshipPolicy.guild_id == guild.id
             ))
 
             for policy_row in policy_rows:
 
                 if not policy_row.is_global:
                     member_policies: list[MemberCensorshipPolicy] = list(await session.scalars(
-                        select(repo.MemberCensorshipPolicy).where(
-                            repo.MemberCensorshipPolicy.origin_policy_id == policy_row.id
+                        select(models.MemberCensorshipPolicy).where(
+                            models.MemberCensorshipPolicy.origin_policy_id == policy_row.id
                         )
                     ))
                     target_members = [guild.get_member(member_policy.user_id) for member_policy in member_policies]
@@ -131,10 +131,10 @@ class CensorshipManager: # TODO async db query
     @staticmethod
     async def get_guild_policy(guild: Guild, content: str) -> CensorshipPolicy:
         async with get_session_instance() as session:
-            scalars = await session.scalars(select(repo.CensorshipPolicy).where(
+            scalars = await session.scalars(select(models.CensorshipPolicy).where(
                 and_(
-                    repo.CensorshipPolicy.guild_id == guild.id,
-                    repo.CensorshipPolicy.content == content
+                    models.CensorshipPolicy.guild_id == guild.id,
+                    models.CensorshipPolicy.content == content
                 )
             ))
             policy_row = scalars.first()
@@ -144,8 +144,8 @@ class CensorshipManager: # TODO async db query
 
             if not policy_row.is_global:
                 member_policies: list[MemberCensorshipPolicy] = list(await session.scalars(
-                    select(repo.MemberCensorshipPolicy).where(
-                        repo.MemberCensorshipPolicy.origin_policy_id == policy_row.id
+                    select(models.MemberCensorshipPolicy).where(
+                        models.MemberCensorshipPolicy.origin_policy_id == policy_row.id
                     )
                 ))
                 target_members = [guild.get_member(member_policy.user_id) for member_policy in member_policies]
@@ -163,10 +163,10 @@ class CensorshipManager: # TODO async db query
     @staticmethod
     async def set_global(guild: Guild, content: str, is_global: bool):
         async with get_session_instance() as session:
-            scalars = await session.scalars(select(repo.CensorshipPolicy).where(
+            scalars = await session.scalars(select(models.CensorshipPolicy).where(
                 and_(
-                    repo.CensorshipPolicy.guild_id == guild.id,
-                    repo.CensorshipPolicy.content == content
+                    models.CensorshipPolicy.guild_id == guild.id,
+                    models.CensorshipPolicy.content == content
                 )
             ))
             policy = scalars.first()
@@ -176,3 +176,39 @@ class CensorshipManager: # TODO async db query
 
             policy.is_global = is_global
             await session.commit()
+
+
+    @staticmethod
+    async def enable_censorship(guild: Guild):
+        async with get_session_instance() as session:
+            scalars = await session.scalars(select().where(
+                models.CensorshipEnabledGuilds.guild_id == guild.id
+            ))
+
+            if scalars.first() is None:
+                session.add(models.CensorshipEnabledGuilds(guild_id=guild.id))
+                await session.commit()
+            else:
+                raise ValueError('해당 길드의 검열 기능은 이미 활성화 되어 있습니다')
+
+    @staticmethod
+    async def disable_censorship(guild: Guild):
+        async with get_session_instance() as session:
+            scalars = await session.scalars(select().where(
+                models.CensorshipEnabledGuilds.guild_id == guild.id
+            ))
+
+            if scalars.first() is not None:
+                await session.delete(models.CensorshipEnabledGuilds(guild_id=guild.id))
+                await session.commit()
+            else:
+                raise ValueError('해당 길드의 검열 기능은 이미 비활성화 되어 있습니다')
+
+    @staticmethod
+    async def is_censorship_enabled(guild: Guild) -> bool:
+        async with get_session_instance() as session:
+            scalars = await session.scalars(select().where(
+                models.CensorshipEnabledGuilds.guild_id == guild.id
+            ))
+
+            return scalars.first() is not None

@@ -162,6 +162,54 @@ class CensorshipExtension(commands.Cog):
     @commands.has_permissions(manage_guild=True) # 슬래시 커맨드용 퍼미션 검사
     async def censorship(self, ctx: commands.Context): ...
 
+    # 하위 명령어들
+
+    @censorship.command(name='활성화', description='이 서버의 검열 기능을 활성화 합니다')
+    @app_commands.default_permissions(manage_guild=True)
+    @commands.has_permissions(manage_guild=True) # 슬래시 커맨드용 퍼미션 검사
+    async def enable(self, ctx: commands.Context):
+        try:
+            await CensorshipManager.enable_censorship(ctx.guild)
+        except ValueError:
+            await ctx.send(
+                embed=Embed(
+                    title='이 서버의 검열 기능을 활성화 했습니다',
+                    description='`/검열 추가`, `/검열 빼기`, `/검열 적용대상`, `/검열 단어목록` 등의 명령어가 있습니다'
+                                '`/검열 비활성화` 로 다시 비활성화 할수 있습니다'
+                ), ephemeral=True
+            )
+        else:
+            await ctx.send(
+                embed=Embed(
+                    title='StateError',
+                    description='이미 검열 기능이 활성화 되어 있습니다'
+                                '비활성화 할려면 `/검열 비활성화` 명령어를 사용해 주세요'
+                ), ephemeral=True
+            )
+
+
+    @censorship.command(name='비활성화', description='이 서버의 검열 기능을 비활성화 합니다')
+    @app_commands.default_permissions(manage_guild=True)
+    @commands.has_permissions(manage_guild=True) # 슬래시 커맨드용 퍼미션 검사
+    async def disable(self, ctx: commands.Context):
+        try:
+            await CensorshipManager.disable_censorship(ctx.guild)
+        except ValueError:
+            await ctx.send(
+                embed=Embed(
+                    title='이 서버의 검열 기능을 비활성화 했습니다',
+                    description='`/검열 활성화` 로 다시 비활성화 할수 있습니다'
+                ), ephemeral=True
+            )
+        else:
+            await ctx.send(
+                embed=Embed(
+                    title='StateError',
+                    description='이미 검열 기능이 비활성화 되어 있습니다'
+                                '활성화 할려면 `/검열 활성화` 명령어를 사용해 주세요'
+                ), ephemeral=True
+            )
+
 
     @censorship.command(
         name='추가', description='검열 목록에 단어를 추가합니다. 특정 유저만 검열받도록 설정할수도 있습니다'
@@ -239,9 +287,7 @@ class CensorshipExtension(commands.Cog):
                 )
 
 
-    @censorship.command(
-        name='빼기', description='검열 목록에서 특정 단어를 제거합니다'
-    )
+    @censorship.command(name='빼기', description='검열 목록에서 특정 단어를 제거합니다')
     @app_commands.default_permissions(manage_guild=True)
     @commands.has_permissions(manage_guild=True) # 슬래시 커맨드용 퍼미션 검사
     async def rm(self, ctx: commands.Context, *, flags: RmFlags):
@@ -318,10 +364,7 @@ class CensorshipExtension(commands.Cog):
             )
 
 
-    @censorship.command(
-        name='단어목록',
-        description='검열되는 단어의 목록을 확인합니다. 관리자 전용입니다'
-    )
+    @censorship.command(name='단어목록',description='검열되는 단어의 목록을 확인합니다. 관리자 전용입니다')
     @app_commands.default_permissions(manage_guild=True)
     @commands.has_permissions(manage_guild=True) # 슬래시 커맨드용 퍼미션 검사
     async def list(self, ctx: commands.Context, *, flags: ListFlags):
