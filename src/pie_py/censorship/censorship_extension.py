@@ -80,6 +80,26 @@ class CensorshipExtension(commands.Cog):
                         await self.censor_message(message, policy)
                         return
 
+    @commands.Cog.listener()
+    async def on_message_edit(self, _: Message, message: Message):
+        if message.author.bot or message.author.guild_permissions.manage_guild:
+            return
+
+        if message.guild is not None:
+            guild = message.guild
+
+            for policy in await CensorshipManager.get_guild_policies(guild):
+                if policy.is_global:
+                    if self.is_illegal(message.content, policy.content):
+                        await self.censor_message(message, policy)
+                        return
+
+                else:
+                    if (message.author in policy.target_members
+                            and self.is_illegal(message.content, policy.content)):
+                        await self.censor_message(message, policy)
+                        return
+
 
     async def censor_message(self, message: Message, policy: CensorshipPolicy):
         logging.info(
