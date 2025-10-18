@@ -159,7 +159,7 @@ class CensorshipExtension(commands.Cog):
 
         if policies:
             for policy in policies:
-                embed.add_field(name=f'* "||`{policy.content}`||"', value='')
+                embed.add_field(name=f'||`{policy.content}`||', value='')
         else:
             embed.add_field(name='', value='검열되는 단어가 없습니다')
 
@@ -393,7 +393,7 @@ class CensorshipExtension(commands.Cog):
 
             if policies:
                 for policy in policies:
-                    field_name = f'"||`{policy.content}`||"'
+                    field_name = f'||`{policy.content}`||'
                     field_value = '* **대상:** '
 
                     if policy.is_global:
@@ -429,7 +429,7 @@ class CensorshipExtension(commands.Cog):
 
             if policies:
                 for policy in policies:
-                    embed.add_field(name=f'* "||`{policy.content}`||"', value='')
+                    embed.add_field(name=f'||`{policy.content}`||', value='')
             else:
                 embed.add_field(name='', value='검열되는 단어가 없습니다')
 
