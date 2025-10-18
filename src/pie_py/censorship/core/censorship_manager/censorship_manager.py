@@ -1,6 +1,6 @@
 from discord import Guild, Member
 from discord.ext import commands
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, InvalidRequestError
 
 from . import models
 from .censorship_policy import CensorshipPolicy
@@ -181,12 +181,12 @@ class CensorshipManager: # TODO async db query
     @staticmethod
     async def enable_censorship(guild: Guild):
         async with get_session_instance() as session:
-            scalars = await session.scalars(select().where(
-                models.CensorshipEnabledGuilds.guild_id == guild.id
+            scalars = await session.scalars(select(models.CensorshipEnabledGuild).where(
+                models.CensorshipEnabledGuild.guild_id == guild.id
             ))
 
             if scalars.first() is None:
-                session.add(models.CensorshipEnabledGuilds(guild_id=guild.id))
+                session.add(models.CensorshipEnabledGuild(guild_id=guild.id))
                 await session.commit()
             else:
                 raise ValueError('해당 길드의 검열 기능은 이미 활성화 되어 있습니다')
@@ -194,12 +194,13 @@ class CensorshipManager: # TODO async db query
     @staticmethod
     async def disable_censorship(guild: Guild):
         async with get_session_instance() as session:
-            scalars = await session.scalars(select().where(
-                models.CensorshipEnabledGuilds.guild_id == guild.id
+            scalars = await session.scalars(select(models.CensorshipEnabledGuild).where(
+                models.CensorshipEnabledGuild.guild_id == guild.id
             ))
+            guild_row = scalars.first()
 
-            if scalars.first() is not None:
-                await session.delete(models.CensorshipEnabledGuilds(guild_id=guild.id))
+            if guild_row is not None:
+                await session.delete(guild_row)
                 await session.commit()
             else:
                 raise ValueError('해당 길드의 검열 기능은 이미 비활성화 되어 있습니다')
@@ -207,8 +208,7 @@ class CensorshipManager: # TODO async db query
     @staticmethod
     async def is_censorship_enabled(guild: Guild) -> bool:
         async with get_session_instance() as session:
-            scalars = await session.scalars(select().where(
-                models.CensorshipEnabledGuilds.guild_id == guild.id
+            scalars = await session.scalars(select(models.CensorshipEnabledGuild).where(
+                models.CensorshipEnabledGuild.guild_id == guild.id
             ))
-
             return scalars.first() is not None

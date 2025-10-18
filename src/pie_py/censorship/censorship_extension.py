@@ -9,6 +9,7 @@ from .core.censorship_manager.exceptions import DuplicateError, PolicyNotFoundEr
 from .core.text_converter import TextConverter, convert_funcs
 from .target_select_ui import TargetSelectView
 from pie_py.utils import theme
+import asyncio
 
 
 class AddFlags(commands.FlagConverter):
@@ -62,47 +63,51 @@ class CensorshipExtension(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: Message):
-        if not CensorshipManager.is_censorship_enabled(message.guild):
+        if message.guild is None: return
+
+        if not await CensorshipManager.is_censorship_enabled(message.guild):
             return
         if message.author.bot or message.author.guild_permissions.manage_guild:
             return
 
-        if message.guild is not None:
-            guild = message.guild
 
-            for policy in await CensorshipManager.get_guild_policies(guild):
-                if policy.is_global:
-                    if self.is_illegal(message.content, policy.content):
-                        await self.censor_message(message, policy)
-                        return
+        guild = message.guild
 
-                else:
-                    if (message.author in policy.target_members
-                            and self.is_illegal(message.content, policy.content)):
-                        await self.censor_message(message, policy)
-                        return
+        for policy in await CensorshipManager.get_guild_policies(guild):
+            if policy.is_global:
+                if self.is_illegal(message.content, policy.content):
+                    await self.censor_message(message, policy)
+                    return
+
+            else:
+                if (message.author in policy.target_members
+                        and self.is_illegal(message.content, policy.content)):
+                    await self.censor_message(message, policy)
+                    return
 
     @commands.Cog.listener()
     async def on_message_edit(self, _: Message, message: Message):
-        if not CensorshipManager.is_censorship_enabled(message.guild):
+        if message.guild is None: return
+
+        if not await CensorshipManager.is_censorship_enabled(message.guild):
             return
         if message.author.bot or message.author.guild_permissions.manage_guild:
             return
 
-        if message.guild is not None:
-            guild = message.guild
 
-            for policy in await CensorshipManager.get_guild_policies(guild):
-                if policy.is_global:
-                    if self.is_illegal(message.content, policy.content):
-                        await self.censor_message(message, policy)
-                        return
+        guild = message.guild
 
-                else:
-                    if (message.author in policy.target_members
-                            and self.is_illegal(message.content, policy.content)):
-                        await self.censor_message(message, policy)
-                        return
+        for policy in await CensorshipManager.get_guild_policies(guild):
+            if policy.is_global:
+                if self.is_illegal(message.content, policy.content):
+                    await self.censor_message(message, policy)
+                    return
+
+            else:
+                if (message.author in policy.target_members
+                        and self.is_illegal(message.content, policy.content)):
+                    await self.censor_message(message, policy)
+                    return
 
 
     async def censor_message(self, message: Message, policy: CensorshipPolicy):
@@ -177,17 +182,19 @@ class CensorshipExtension(commands.Cog):
         except ValueError:
             await ctx.send(
                 embed=Embed(
-                    title='이 서버의 검열 기능을 활성화 했습니다',
-                    description='`/검열 추가`, `/검열 빼기`, `/검열 적용대상`, `/검열 단어목록` 등의 명령어가 있습니다'
-                                '`/검열 비활성화` 로 다시 비활성화 할수 있습니다'
+                    title='StateError',
+                    description='이미 검열 기능이 활성화 되어 있습니다. '
+                                '비활성화 할려면 `/검열 비활성화` 명령어를 사용해 주세요',
+                    color=theme.ERROR_COLOR
                 ), ephemeral=True
             )
         else:
             await ctx.send(
                 embed=Embed(
-                    title='StateError',
-                    description='이미 검열 기능이 활성화 되어 있습니다'
-                                '비활성화 할려면 `/검열 비활성화` 명령어를 사용해 주세요'
+                    title='이 서버의 검열 기능을 활성화 했습니다',
+                    description='`/검열 추가`, `/검열 빼기`, `/검열 적용대상`, `/검열 단어목록` 등의 명령어를 사용해 보세요. '
+                                '`/검열 비활성화` 로 다시 비활성화 할수 있습니다',
+                    color=theme.OK_COLOR
                 ), ephemeral=True
             )
 
@@ -201,16 +208,18 @@ class CensorshipExtension(commands.Cog):
         except ValueError:
             await ctx.send(
                 embed=Embed(
-                    title='이 서버의 검열 기능을 비활성화 했습니다',
-                    description='`/검열 활성화` 로 다시 비활성화 할수 있습니다'
+                    title='StateError',
+                    description='이미 검열 기능이 비활성화 되어 있습니다. '
+                                '활성화 할려면 `/검열 활성화` 명령어를 사용해 주세요',
+                    color=theme.ERROR_COLOR
                 ), ephemeral=True
             )
         else:
             await ctx.send(
                 embed=Embed(
-                    title='StateError',
-                    description='이미 검열 기능이 비활성화 되어 있습니다'
-                                '활성화 할려면 `/검열 활성화` 명령어를 사용해 주세요'
+                    title='이 서버의 검열 기능을 비활성화 했습니다. ',
+                    description='`/검열 활성화` 로 다시 활성화 할수 있습니다',
+                    color=theme.OK_COLOR
                 ), ephemeral=True
             )
 
