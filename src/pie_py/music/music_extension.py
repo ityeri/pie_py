@@ -184,7 +184,7 @@ class MusicExtension(commands.Cog):
             embed.description = f"영상을 재생 목록에 추가합니다\n`{parse_time(yt.length)}`"
 
         if searched:
-            embed.set_footer(text=f"검색어: \"{query}\"")
+            embed.set_footer(text=f'검색어: \"{query}\" | 관리자용 새기능 생김: "/검열 ..."')
 
 
         await ctx.send(embed=embed)

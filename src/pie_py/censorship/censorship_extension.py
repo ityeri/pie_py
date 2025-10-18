@@ -189,14 +189,15 @@ class CensorshipExtension(commands.Cog):
                 ), ephemeral=True
             )
         else:
-            await ctx.send(
-                embed=Embed(
-                    title='이 서버의 검열 기능을 활성화 했습니다',
-                    description='`/검열 추가`, `/검열 빼기`, `/검열 적용대상`, `/검열 단어목록` 등의 명령어를 사용해 보세요. '
-                                '`/검열 비활성화` 로 다시 비활성화 할수 있습니다',
-                    color=theme.OK_COLOR
-                ), ephemeral=True
+            embed = Embed(
+                title='이 서버의 검열 기능을 활성화 했습니다',
+                description='`/검열 추가`, `/검열 빼기`, `/검열 적용대상`, `/검열 단어목록` 등의 명령어를 사용해 보세요. '
+                            '`/검열 비활성화` 로 다시 비활성화 할수 있습니다',
+                color=theme.OK_COLOR
             )
+            embed.set_footer(text='관련 기능은 서버 관리 권한이 있는 맴버만 사용할수 있습니다. '
+                                  '아직 검열기능 테스트 다 안함; 버그나면 디코 @t1h2e 로 연락좀')
+            await ctx.send(embed=embed, ephemeral=True)
 
 
     @censorship.command(name='비활성화', description='이 서버의 검열 기능을 비활성화 합니다')
