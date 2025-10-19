@@ -3,7 +3,7 @@ pie_py
 디스코드봇 파이
 
 ## build
-파이는 빌드시스템으로 poetry 를 사용합니다
+빌드시스템으로 poetry 를 사용합니다
 
 ```shell
 python3 -m pip install --no-cache-dir poetry
@@ -17,6 +17,17 @@ python3 -m pip install --no-cache-dir dist/*.whl
 python3 -m pie_py
 ```
 
-TODO
-===
-censorship
+## docker & podman
+
+```shell
+docker-compose up
+```
+
+```shell
+podman-compose up
+```
+
+# TODO
+[TODO](TODO)
+
+믹스코드!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1111
