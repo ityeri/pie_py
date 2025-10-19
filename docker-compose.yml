@@ -1,9 +1,26 @@
 services:
+  db:
+    image: docker.io/library/mysql:8.0
+    container_name: piepydb
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: piepydb
+
+    volumes:
+      - dbdata:/var/lib/mysql
+
   app:
     build: .
-    image: pie-py-app
-    container_name: pie-py-app
+    image: piepyimage
+    container_name: piepyapp
+    environment:
+      DB_URL: mysql+pymysql://root:root@db:3306/piepydb
+      ASYNC_DB_URL: mysql+aiomysql://root:root@db:3306/piepydb
     env_file:
       - .env
-    ports:
-      - "8080:8"
+    depends_on:
+      - db
+
+volumes:
+  dbdata:
