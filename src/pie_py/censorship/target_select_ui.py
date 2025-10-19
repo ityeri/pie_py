@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import tuple_iterator
 from enum import Enum
-from typing import Any
 
 import discord.ui
 from discord import Guild, Interaction, InteractionResponse, Embed
@@ -10,7 +8,6 @@ from discord import Guild, Interaction, InteractionResponse, Embed
 from pie_py.censorship.core.censorship_manager import CensorshipManager
 from pie_py.censorship.core.censorship_manager.exceptions import PolicyNotFoundError
 from pie_py.utils import theme
-from pie_py.utils.template import send_error_embed
 
 
 class LabeledTarget(Enum):
