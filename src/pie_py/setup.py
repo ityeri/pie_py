@@ -3,6 +3,9 @@ import logging
 import shutil
 import sys
 import os
+import time
+
+import pymysql
 
 import discord
 from discord.ext import commands
@@ -63,6 +66,28 @@ def setup():
         logging.info(f'Load "{module}"...')
         importlib.import_module(module)
         logging.info(f'"{module}" loaded')
+
+    logging.info('Trying to connect to database for 60s')
+    is_connected = False
+    for i in range(60):
+        try:
+            conn = pymysql.connect(
+                host='db',
+                user='root',
+                password='root',
+                database='piepydb'
+            )
+            is_connected = True
+            break
+        except pymysql.err.OperationalError:
+            print(f'{i}th attempt: database not ready, retrying in 1s...')
+            time.sleep(1)
+
+    if is_connected:
+        logging.info('Database is ready')
+    else:
+        logging.error("Can't connect to database")
+        raise ConnectionError("Can't connect to database")
 
     logging.info("Setup database engine...")
     db_setup()
