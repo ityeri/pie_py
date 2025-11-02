@@ -14,6 +14,7 @@ services:
     build: .
     image: piepyimage
     container_name: piepyapp
+    tty: true
     environment:
       DB_URL: mysql+pymysql://root:root@db:3306/piepydb
       ASYNC_DB_URL: mysql+aiomysql://root:root@db:3306/piepydb

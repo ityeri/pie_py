@@ -32,6 +32,11 @@ class ListFlags(commands.FlagConverter):
 
 
 class CensorshipExtension(commands.Cog):
+
+    required_permissions: dict[str, bool] = {
+        'manage_messages': True
+    }
+
     def __init__(self, bot: commands.Bot):
         self.bot: commands.Bot = bot
 
@@ -167,15 +172,15 @@ class CensorshipExtension(commands.Cog):
 
 
     @commands.hybrid_group(name='검열', description='검열 관리 명령어 모음')
-    @app_commands.default_permissions(manage_guild=True)
-    @commands.has_permissions(manage_guild=True) # 슬래시 커맨드용 퍼미션 검사
+    @app_commands.default_permissions(**required_permissions)
+    @commands.has_permissions(**required_permissions) # 슬래시 커맨드용 퍼미션 검사
     async def censorship(self, ctx: commands.Context): ...
 
     # 하위 명령어들
 
     @censorship.command(name='활성화', description='이 서버의 검열 기능을 활성화 합니다')
-    @app_commands.default_permissions(manage_guild=True)
-    @commands.has_permissions(manage_guild=True) # 슬래시 커맨드용 퍼미션 검사
+    @app_commands.default_permissions(**required_permissions)
+    @commands.has_permissions(**required_permissions) # 슬래시 커맨드용 퍼미션 검사
     async def enable(self, ctx: commands.Context):
         try:
             await CensorshipManager.enable_censorship(ctx.guild)
@@ -201,8 +206,8 @@ class CensorshipExtension(commands.Cog):
 
 
     @censorship.command(name='비활성화', description='이 서버의 검열 기능을 비활성화 합니다')
-    @app_commands.default_permissions(manage_guild=True)
-    @commands.has_permissions(manage_guild=True) # 슬래시 커맨드용 퍼미션 검사
+    @app_commands.default_permissions(**required_permissions)
+    @commands.has_permissions(**required_permissions) # 슬래시 커맨드용 퍼미션 검사
     async def disable(self, ctx: commands.Context):
         try:
             await CensorshipManager.disable_censorship(ctx.guild)
@@ -228,8 +233,8 @@ class CensorshipExtension(commands.Cog):
     @censorship.command(
         name='추가', description='검열 목록에 단어를 추가합니다. 특정 유저만 검열받도록 설정할수도 있습니다'
     )
-    @app_commands.default_permissions(manage_guild=True)
-    @commands.has_permissions(manage_guild=True) # 슬래시 커맨드용 퍼미션 검사
+    @app_commands.default_permissions(**required_permissions)
+    @commands.has_permissions(**required_permissions) # 슬래시 커맨드용 퍼미션 검사
     async def add(self, ctx: commands.Context, *, flags: RmFlags):
         if flags.target_member is None:
             try:
@@ -296,14 +301,14 @@ class CensorshipExtension(commands.Cog):
             else:
                 await ctx.send(
                     embed=Embed(
-                        description=f'<@{flags.target_member.id}> 멤버에게 {flags.content} 검열 청책을 추가했습니다'
+                        description=f'<@{flags.target_member.id}> 멤버에게 {flags.content} 검열 정책을 추가했습니다'
                     ), ephemeral=True
                 )
 
 
     @censorship.command(name='빼기', description='검열 목록에서 특정 단어를 제거합니다')
-    @app_commands.default_permissions(manage_guild=True)
-    @commands.has_permissions(manage_guild=True) # 슬래시 커맨드용 퍼미션 검사
+    @app_commands.default_permissions(**required_permissions)
+    @commands.has_permissions(**required_permissions) # 슬래시 커맨드용 퍼미션 검사
     async def rm(self, ctx: commands.Context, *, flags: RmFlags):
         if flags.target_member is None:
             try:
@@ -349,8 +354,8 @@ class CensorshipExtension(commands.Cog):
     @censorship.command(
         name='적용대상', description='검열이 모든 멤버에게 적용될지, 특정 멤버에게만 적용될지 설정합니다'
     )
-    @app_commands.default_permissions(manage_guild=True)
-    @commands.has_permissions(manage_guild=True) # 슬래시 커맨드용 퍼미션 검사
+    @app_commands.default_permissions(**required_permissions)
+    @commands.has_permissions(**required_permissions) # 슬래시 커맨드용 퍼미션 검사
     async def target(self, ctx: commands.Context, *, flags: TargetFlags):
         try:
             policy = await CensorshipManager.get_guild_policy(ctx.guild, flags.content)
@@ -379,8 +384,8 @@ class CensorshipExtension(commands.Cog):
 
 
     @censorship.command(name='단어목록',description='검열되는 단어의 목록을 확인합니다. 관리자 전용입니다')
-    @app_commands.default_permissions(manage_guild=True)
-    @commands.has_permissions(manage_guild=True) # 슬래시 커맨드용 퍼미션 검사
+    @app_commands.default_permissions(**required_permissions)
+    @commands.has_permissions(**required_permissions) # 슬래시 커맨드용 퍼미션 검사
     async def list(self, ctx: commands.Context, *, flags: ListFlags):
 
         if flags.member is None:
