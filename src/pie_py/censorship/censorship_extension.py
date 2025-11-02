@@ -296,7 +296,7 @@ class CensorshipExtension(commands.Cog):
             else:
                 await ctx.send(
                     embed=Embed(
-                        description=f'<@{flags.target_member.id}> 멤버에게 {flags.content} 검열 청책을 추가했습니다'
+                        description=f'<@{flags.target_member.id}> 멤버에게 {flags.content} 검열 정책을 추가했습니다'
                     ), ephemeral=True
                 )
 
