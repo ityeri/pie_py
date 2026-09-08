@@ -3,15 +3,14 @@ from enum import Enum, auto
 
 from discord import Embed, Message
 from discord.ext import commands
-from pytubefix import YouTube, extract
-from pytubefix.exceptions import RegexMatchError
 from yarl import URL
-from yspy.__future__ import VideosSearch
+from yspy import Search, VideoResultElement, Video, VideoState
+from yspy.utils import SearchMode, NONE_LOCALE
 
 from piepy.player_manager import PlayerManager, MusicAddingResult, MusicElement, \
     PlayerController, PlayerStatus, PlayerStopReason, StateValidationFailedReason
 from piepy.utils import theme
-from piepy.youtube import YouTubeFetchingResult, YouTubeMusicElementProvider, fetch_youtube
+from piepy.youtube import YouTubeMusicElementProvider
 from .next_music_select_view import NextMusicSelectView
 from .order_mode_select_view import OrderModeSelectView
 from .playlist_view import PlaylistView
@@ -20,14 +19,13 @@ from .removing_music_select_view import RemovingMusicSelectView
 _logger = logging.getLogger(__name__)
 
 
-async def get_urls_by_query(query: str, limit: int) -> list[str]:
-    search = VideosSearch(query, limit=limit)
-    result = await search.next()
+async def _get_urls_by_query(query: str) -> list[str]:
+    result = await Search.asearch(query, SearchMode.VIDEO, NONE_LOCALE)
 
-    return [single_result['link'] for single_result in result['result']]
+    return [element.url for element in result.results if isinstance(element, VideoResultElement)]
 
 
-def query_music_naturally(musics: list[MusicElement], title_or_index: str) -> MusicElement | None:
+def _query_music_naturally(musics: list[MusicElement], title_or_index: str) -> MusicElement | None:
     try:
         index: int = int(title_or_index) - 1
         if 0 <= index:  # 맞다 파이썬 음수 인덱스도 있었지
@@ -46,7 +44,7 @@ def query_music_naturally(musics: list[MusicElement], title_or_index: str) -> Mu
     return None
 
 
-def ensure_scheme(url_str: str, scheme: str = 'https') -> URL:
+def _ensure_scheme(url_str: str, scheme: str = 'https') -> URL:
     url = URL(url_str)
     if not url.scheme:
         url = URL(f"{scheme}://{url_str}")
@@ -57,6 +55,71 @@ class UserVoiceAvailability(Enum):
     UNAVAILABLE = auto()
     CREATABLE = auto()
     MOVABLE = auto()
+
+
+_EMBEDS_PER_VIDEO_STATE: dict[VideoState, Embed] = {
+    VideoState.MEMBERS_ONLY: Embed(
+        title='MEMBERS_ONLY',
+        description='해당 영상은 유튜브 상에서 맴버십 전용입니다',
+        color=theme.ERROR_COLOR
+    ),
+    VideoState.RECORDING_UNAVAILABLE: Embed(
+        title='RECORDING_UNAVAILABLE',
+        description='재생할수 없는 종료 라이브 스트림입니다',
+        color=theme.ERROR_COLOR
+    ),
+    VideoState.AGE_RESTRICTED: Embed(
+        title='AGE_RESTRICTED',
+        description='연령 제한이 걸린 영상입니다',
+        color=theme.ERROR_COLOR
+    ),
+    VideoState.BOT_DETECTION: Embed(
+        title='BOT_DETECTION',
+        description='영상을 받아오던중 유튜브에서 봇으로 감지되었습니다.'
+                    '계속 같은 현상이 발생한다면 개발자에게 제보해주세요',
+        color=theme.ERROR_COLOR
+    ),
+    VideoState.LOGIN_REQUIRED: Embed(
+        title='LOGIN_REQUIRED',
+        description='시청을 위해선 유튜브 상에서 로그인이 필요한 영상입니다',
+        color=theme.ERROR_COLOR
+    ),
+    VideoState.REGION_BLOCKED: Embed(
+        title='REGION_BLOCKED',
+        description='지역 제한으로 시청이 불가능한 영상입니다',
+        color=theme.ERROR_COLOR
+    ),
+    VideoState.COPYRIGHT_BLOCKED: Embed(
+        title='COPYRIGHT_BLOCKED',
+        description='저작권 문제로 인해 시청이 차단된 영상입니다',
+        color=theme.ERROR_COLOR
+    ),
+    VideoState.PRIVATE: Embed(
+        title='PRIVATE',
+        description='비공개로 설정된 영상입니다',
+        color=theme.ERROR_COLOR
+    ),
+    VideoState.REMOVED_BY_UPLOADER: Embed(
+        title='REMOVED_BY_UPLOADER',
+        description='업로더가 삭제한 영상입니다',
+        color=theme.ERROR_COLOR
+    ),
+    VideoState.ACCOUNT_TERMINATED: Embed(
+        title='ACCOUNT_TERMINATED',
+        description='계정이 정지되어 더이상 시청할수 없는 영상입니다',
+        color=theme.ERROR_COLOR
+    ),
+    VideoState.REMOVED_FOR_TOS: Embed(
+        title='REMOVED_FOR_TOS',
+        description='유튜브 커뮤니티 가이드라인 위반으로 삭제된 영상입니다',
+        color=theme.ERROR_COLOR
+    ),
+    VideoState.UNAVAILABLE: Embed(
+        title='UNAVAILABLE',
+        description='알수없는 이유로 재생할수 없는 영상입니다',
+        color=theme.ERROR_COLOR
+    )
+}
 
 
 class MusicCommandCog(commands.Cog):
@@ -153,9 +216,9 @@ class MusicCommandCog(commands.Cog):
 
         # step1. is the url_or_query url?
         try:
-            extract.video_id(flags.url_or_query)
+            video_id = URL(flags.url_or_query).query['v']
             is_youtube_url = True
-        except RegexMatchError:
+        except KeyError:
             is_youtube_url = False
 
         # step2. get query, url from url_or_query
@@ -165,7 +228,7 @@ class MusicCommandCog(commands.Cog):
         else:
             message = await message.edit(content='영상을 검색중입니다...')
             query = flags.url_or_query
-            results = await get_urls_by_query(query, limit=1)
+            results = await _get_urls_by_query(query)
 
             if not results:
                 await message.edit(
@@ -183,17 +246,16 @@ class MusicCommandCog(commands.Cog):
             url = results[0]
 
         # step3. get the YouTube object and validate
-        yt = await self.fetch_youtube_with_context(ctx, url, query)
-        if yt is None:
+        video = await self.fetch_video_with_context(message, url, query)
+        if video is None:
             return
 
         await message.edit(content='영상을 받아오고 있습니다... 잠시 시간이 걸릴수 있습니다')
 
         # step4. get the final stream and create a MusicElement
         try:
-            music = await self.music_provider.create_music_from_yt(yt, str(ensure_scheme(url)))
+            music = await self.music_provider.create_music_from_video(video)
         except Exception:
-            # pytubefix/yt-dlp can raise various errors while fetching the actual stream
             _logger.error(f'Failed to create a MusicElement from YouTube: url={url}', exc_info=True)
             await message.edit(
                 content='no',
@@ -262,63 +324,20 @@ class MusicCommandCog(commands.Cog):
                 ).set_footer(text=f'검색어: {query}' if query is not None else None)
             )
 
-    async def fetch_youtube_with_context(self, message: Message, url: str, query: str | None) -> YouTube | None:
-        result = fetch_youtube(url)
+    @staticmethod
+    async def fetch_video_with_context(message: Message, url: str, query: str | None) -> Video | None:
+        video, state = await Video.aget(url)
 
-        # TODO most of this if statements are never be reached. read the youtube_fetcher.py
-        if result == YouTubeFetchingResult.VIDEO_PRIVATE:
-            await message.edit(
-                embed=Embed(
-                    title='VIDEO_PRIVATE',
-                    description='비공개 영상이거나, 멤버십 전용 영상이거나, 연령 제한이 존재하는 영상입니다!',
-                    color=theme.ERROR_COLOR
-                ).set_footer(text=f'검색어: {query}' if query is not None else None)
-            )
-        elif result == YouTubeFetchingResult.VIDEO_REMOVED:
-            await message.edit(
-                embed=Embed(
-                    title='VIDEO_REMOVED',
-                    description='삭제된 영상입니다!',
-                    color=theme.ERROR_COLOR
-                ).set_footer(text=f'검색어: {query}' if query is not None else None)
-            )
-        elif result == YouTubeFetchingResult.VIDEO_BLOCKED:
-            await message.edit(
-                embed=Embed(
-                    title='VIDEO_BLOCKED',
-                    description='저작권 또는 지역 제한으로 재생할 수 없는 영상입니다!',
-                    color=theme.ERROR_COLOR
-                ).set_footer(text=f'검색어: {query}' if query is not None else None)
-            )
-        elif result == YouTubeFetchingResult.UNAVAILABLE_LIVE:
-            await message.edit(
-                embed=Embed(
-                    title='UNAVAILABLE_LIVE',
-                    description='라이브 방송은 다시보기가 아니라면 재생할 수 없습니다!',
-                    color=theme.ERROR_COLOR
-                ).set_footer(text=f'검색어: {query}' if query is not None else None)
-            )
-        elif result == YouTubeFetchingResult.BOT_DETECTION:
-            await message.edit(
-                embed=Embed(
-                    title='BOT_DETECTION',
-                    description='영상을 가져오던중 YouTube에 의해 봇으로 감지되었습니다. 잠시 후 다시 시도해 주세요!',
-                    color=theme.ERROR_COLOR
-                ).set_footer(text=f'검색어: {query}' if query is not None else None)
-            )
-        elif result == YouTubeFetchingResult.UNKNOWN:
-            await message.edit(
-                embed=Embed(
-                    title='VIDEO_UNAVAILABLE',
-                    description='알 수 없는 이유로 영상에 접근할 수 없습니다!'
-                                '영상 비공개, 맴버십 전용이나 연령 제한 등등이 원인일수 있습니다',
-                    color=theme.ERROR_COLOR
-                ).set_footer(text=f'검색어: {query}' if query is not None else None)
-            )
-
-        if isinstance(result, YouTube):
-            return result
+        # most of this if statements are never be reached. read the youtube_fetcher.py
+        # And finally fixed by yspy!!!!!!!!!!!!!!!!!!!!!!!!!!11
+        if video is not None:
+            return video
         else:
+            await message.edit(
+                content='no',
+                embed=_EMBEDS_PER_VIDEO_STATE[state]
+                .set_footer(text=f'검색어: {query}' if query is not None else None)
+            )
             return None
 
     @commands.hybrid_command(name='나가', description='재생을 멈추고 통화방을 나갑니다')
