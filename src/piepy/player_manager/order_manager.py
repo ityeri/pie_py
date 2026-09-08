@@ -18,7 +18,8 @@ class OrderManager[T: Hashable]:
     is_random_order: bool
 
     @staticmethod
-    def create(elements: list[T], current_element: T | None, next_element: T | None, *, is_loop: bool, is_random_order: bool) -> OrderManager[T]:
+    def create(elements: list[T], current_element: T | None, next_element: T | None, *, is_loop: bool,
+               is_random_order: bool) -> OrderManager[T]:
         if is_random_order:
             used_elements = set()
         else:
@@ -98,9 +99,9 @@ class OrderManager[T: Hashable]:
 
     def change_order_mode(self, is_loop: bool, is_random_order: bool) -> OrderManager[T]:
         if is_random_order:
-            if self.is_random_order: # If manager was a random order previously
+            if self.is_random_order:  # If manager was a random order previously
                 used_elements = self.used_elements
-            else: # If manager wasn't a random order previously
+            else:  # If manager wasn't a random order previously
                 used_elements = set()
         else:
             used_elements = None
@@ -139,6 +140,7 @@ class OrderManager[T: Hashable]:
             is_loop=self.is_loop,
             is_random_order=self.is_random_order
         )
+
     def set_next(self, element: T) -> OrderManager[T]:
         if element not in self.elements:
             raise ValueError('Given element does not included in elements')
@@ -152,6 +154,7 @@ class OrderManager[T: Hashable]:
             is_loop=self.is_loop,
             is_random_order=self.is_random_order
         )
+
     def add_last(self, element: T) -> OrderManager[T]:
         return OrderManager(
             elements=self.elements + [element],
@@ -162,6 +165,7 @@ class OrderManager[T: Hashable]:
             is_loop=self.is_loop,
             is_random_order=self.is_random_order
         )
+
     def rm(self, element: T) -> OrderManager[T]:
         if element not in self.elements:
             raise ValueError('Given element does not included in elements')
@@ -180,7 +184,7 @@ class OrderManager[T: Hashable]:
             next_element = self._get_next_element_of(
                 self.current_element,
                 elements=new_elements,
-                used_elements={used_elements}
+                used_elements=used_elements
             )
         else:
             next_element = self.next_element
