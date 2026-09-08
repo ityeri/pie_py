@@ -437,7 +437,7 @@ requires-dist = [
     { name = "dotenv", specifier = ">=0.9.9,<1.0.0" },
     { name = "pynacl", specifier = ">=1.6.2" },
     { name = "reger", specifier = ">=0.1.3" },
-    { name = "ydpy", specifier = ">=0.1.0" },
+    { name = "ydpy", specifier = ">=0.1.1" },
     { name = "yspy", specifier = ">=0.2.0" },
 ]
 
@@ -605,15 +605,15 @@ wheels = [
 
 [[package]]
 name = "ydpy"
-version = "0.1.0"
+version = "0.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
     { name = "yarl" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/56/50/a393bb09b2f87b240b278ba53db3bbf865c9851e26cd7dfec71eaea30e3b/ydpy-0.1.0.tar.gz", hash = "sha256:714033da2ea9bd9060eb25cbde99cb3f3340d479ce1b8b30be861971f6f0e39e", size = 26727, upload-time = "2026-09-05T13:30:49.681Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e2/82/78ae828fbb1c63b231c808ec6d590248ce50b76c7ea0d744a0cebafe6be3/ydpy-0.1.1.tar.gz", hash = "sha256:1a59f3172a65bcecbdb81e2b2c038b8ac636b858e7118cb553539ff6727906ee", size = 28297, upload-time = "2026-09-08T16:09:35.961Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ac/93/8ab393c12e1aaee1b986eb5c8f44edb0a24d57f4dd8f3ae1add59f23dec7/ydpy-0.1.0-py3-none-any.whl", hash = "sha256:0711792a8dc8c644b8960968983ab63c6859d3f6a371ebc17b1906d11a607696", size = 25580, upload-time = "2026-09-05T13:30:48.396Z" },
+    { url = "https://files.pythonhosted.org/packages/12/d3/dc71838ef64fd035e5cfbb41fda701e4ca9ec04e234502de094ba66ef292/ydpy-0.1.1-py3-none-any.whl", hash = "sha256:6bb554a7563403742bf018f9a605886364fdf3bb7e0f0aa21d357a20d3d4219c", size = 25695, upload-time = "2026-09-08T16:09:34.772Z" },
 ]
 
 [[package]]

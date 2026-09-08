@@ -2,7 +2,7 @@
 name = "piepy"
 version = "0.1.0"
 authors = [
-  { name="ityeri", email="ityeri9@gmail.com" },
+    { name = "ityeri", email = "ityeri9@gmail.com" },
 ]
 description = "파이봇"
 readme = "README.md"
@@ -21,7 +21,7 @@ dependencies = [
     "reger>=0.1.3",
     "pynacl>=1.6.2",
     "yspy>=0.2.0",
-    "ydpy>=0.1.0",
+    "ydpy>=0.1.1",
 ]
 
 [project.urls]
