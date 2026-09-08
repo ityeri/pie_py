@@ -1,0 +1,21 @@
+import os
+from dataclasses import dataclass
+
+from dotenv import load_dotenv
+
+
+@dataclass
+class Config:
+    bot_token: str
+    log_file_path: str | None
+    download_dir: str
+
+
+def get_config_from_env() -> Config:
+    load_dotenv()
+
+    return Config(
+        os.getenv('BOT_TOKEN'),
+        os.getenv('LOG_FILE'),
+        os.getenv('DOWNLOAD_DIR', './downloads')
+    )
