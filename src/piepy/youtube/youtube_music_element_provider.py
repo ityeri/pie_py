@@ -1,3 +1,4 @@
+import logging
 import os
 import uuid
 from pathlib import Path
@@ -7,6 +8,7 @@ from ydpy import Video
 
 from piepy.player_manager import LocalFileMusicElement, MusicElement
 
+_logger: logging.Logger = logging.getLogger(__file__)
 _MAX_AUDIO_BPS: int = 50_000
 
 
@@ -22,8 +24,10 @@ class YouTubeMusicElementProvider:  # 지금 무료체험 하세요
             leftover.unlink()
 
     async def create_music_from_video(self, video: yspy.Video) -> MusicElement:
+        _logger.debug('Fetching playable video...')
         downloading_video = Video(video.url)
         video_data = await downloading_video.afetch()
+        _logger.debug('Playable video fetched')
 
         audio_formats = [format for format in video_data.formats if format.is_audio and not format.is_video]
         sorted_formats = sorted(audio_formats, key=lambda f: f.bitrate)
@@ -37,7 +41,9 @@ class YouTubeMusicElementProvider:  # 지금 무료체험 하세요
         filename = f'{uuid.uuid4()}.bin'
         file_path = str(Path(self.download_dir).joinpath(filename))
 
+        _logger.debug('Start downloading')
         await picked_format.adownload(file_path)
+        _logger.debug('Downloading done')
 
         return LocalFileMusicElement(
             f'yt_video_{video.id}',
