@@ -28,7 +28,6 @@
             libopus
             libsodium
             cacert
-            nodejs
           ];
 
           shellHook = commonShellHook;
