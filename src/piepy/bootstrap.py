@@ -60,9 +60,8 @@ class Bootstrapper:
 
     def setup_logging(self):
         root_logger = logging.getLogger()
-        root_logger.setLevel(logging.INFO)
 
-        reger.setup_logging()
+        reger.setup_logging(level=logging.INFO)
 
         if self.config.log_file_path:
             file_handler = logging.FileHandler(filename=self.config.log_file_path, encoding='utf-8')
